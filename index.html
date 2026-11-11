@@ -77,7 +77,7 @@ nav.tabbar{
   scrollbar-width:none; padding:4px 2px env(safe-area-inset-bottom);
 }
 nav.tabbar button{
-  flex:0 0 12.5%; min-width:64px; background:transparent; border:none; color:var(--muted); font-size:11px;
+  flex:1 0 14.285%; min-width:64px; background:transparent; border:none; color:var(--muted); font-size:11px;
   display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 2px; cursor:pointer; border-radius:10px;
 }
 nav.tabbar button .ic{font-size:18px}
@@ -114,6 +114,11 @@ table th{color:var(--muted); font-weight:600; font-size:12px}
 
 .search-bar{display:flex; gap:8px; margin-bottom:10px}
 .page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 2px 12px}
+.people-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;margin:2px 0 14px;background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow)}
+.people-tab{min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.people-tab.active{background:var(--primary);color:#fff}
+.people-panel{display:none}
+.people-panel.active{display:block}
 .page-heading h2{font-size:17px;margin:0 0 3px}
 .page-heading p{margin:0}
 .count-pill{flex:none;border-radius:999px;background:var(--surface);border:1px solid var(--border);padding:6px 11px;font-size:12px;font-weight:700;color:var(--primary)}
@@ -216,10 +221,16 @@ textarea.msg{min-height:120px}
     </div>
   </section>
 
-  <!-- PEOPLE / APPLICANTS -->
-  <section class="view" id="view-applicants">
+  <!-- PEOPLE: APPLICANTS / TEACHERS / REFERRERS -->
+  <section class="view" id="view-people">
+    <div class="people-tabs" role="tablist" aria-label="مدیریت افراد">
+      <button type="button" class="people-tab active" data-people-tab="applicants" role="tab" aria-selected="true">متقاضی</button>
+      <button type="button" class="people-tab" data-people-tab="teachers" role="tab" aria-selected="false">استاد</button>
+      <button type="button" class="people-tab" data-people-tab="referrers" role="tab" aria-selected="false">معرف</button>
+    </div>
+    <div class="people-panel active" id="panel-applicants">
     <div class="page-heading">
-      <div><h2>اشخاص و متقاضیان</h2><p class="muted small">پرونده افراد و سوابق آزمون‌هایشان</p></div>
+      <div><h2>متقاضیان</h2><p class="muted small">پرونده افراد و سوابق آزمون‌هایشان</p></div>
       <span class="count-pill" id="applicantCount">۰ نفر</span>
     </div>
     <div class="search-bar">
@@ -228,8 +239,8 @@ textarea.msg{min-height:120px}
     <div class="card list-card" id="applicantsList"></div>
   </section>
 
-  <!-- TEACHERS -->
-  <section class="view" id="view-teachers">
+    </div>
+    <div class="people-panel" id="panel-teachers">
     <div class="page-heading">
       <div><h2>اساتید</h2><p class="muted small">مدیریت اطلاعات و سوابق همکاری اساتید</p></div>
       <span class="count-pill" id="teacherCount">۰ استاد</span>
@@ -239,6 +250,18 @@ textarea.msg{min-height:120px}
     </div>
     <div class="card list-card" id="teachersList"></div>
     <button class="btn block" id="btnAddTeacherPage">+ افزودن استاد جدید</button>
+    </div>
+    <div class="people-panel" id="panel-referrers">
+      <div class="page-heading">
+        <div><h2>معرف‌ها</h2><p class="muted small">مدیریت اطلاعات و سوابق معرفی متقاضیان</p></div>
+        <span class="count-pill" id="referrerCount">۰ معرف</span>
+      </div>
+      <div class="search-bar">
+        <input type="search" id="searchReferrer" placeholder="جست‌وجوی نام یا شماره تماس معرف..." />
+      </div>
+      <div class="card list-card" id="referrersPeopleList"></div>
+      <button class="btn block" id="btnAddReferrerPage">+ افزودن معرف جدید</button>
+    </div>
   </section>
 
   <!-- EXAMS -->
@@ -342,11 +365,6 @@ textarea.msg{min-height:120px}
   <!-- SETTINGS -->
   <section class="view" id="view-settings">
     <div class="card">
-      <h2>معرف‌ها</h2>
-      <div id="referrersList"></div>
-      <button class="btn secondary block" id="btnAddReferrer" style="margin-top:8px">+ افزودن معرف</button>
-    </div>
-    <div class="card">
       <h2>انواع آزمون</h2>
       <div id="examTypesList"></div>
       <button class="btn secondary block" id="btnAddExamType" style="margin-top:8px">+ افزودن نوع آزمون</button>
@@ -388,8 +406,7 @@ textarea.msg{min-height:120px}
 
 <nav class="tabbar">
   <button class="tab-btn active" data-view="dashboard"><span class="ic">🏠</span>داشبورد</button>
-  <button class="tab-btn" data-view="applicants"><span class="ic">👥</span>اشخاص</button>
-  <button class="tab-btn" data-view="teachers"><span class="ic">👨‍🏫</span>اساتید</button>
+  <button class="tab-btn" data-view="people"><span class="ic">👥</span>افراد</button>
   <button class="tab-btn" data-view="exams"><span class="ic">📝</span>آزمون‌ها</button>
   <button class="tab-btn" data-view="calendar"><span class="ic">📅</span>تقویم</button>
   <button class="tab-btn" data-view="reports"><span class="ic">📊</span>گزارش‌ها</button>
