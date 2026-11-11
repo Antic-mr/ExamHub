@@ -46,55 +46,52 @@
 
   <!-- PEOPLE: APPLICANTS / TEACHERS / REFERRERS -->
   <section class="view" id="view-people">
-    <div class="people-tabs" role="tablist" aria-label="مدیریت افراد">
+    <div class="people-tabs" role="tablist" aria-label="اشخاص">
       <button type="button" class="people-tab active" data-people-tab="applicants" role="tab" aria-selected="true">متقاضی</button>
       <button type="button" class="people-tab" data-people-tab="teachers" role="tab" aria-selected="false">استاد</button>
       <button type="button" class="people-tab" data-people-tab="referrers" role="tab" aria-selected="false">معرف</button>
     </div>
-    <div class="people-panel active" id="panel-applicants">
-    <div class="page-heading">
-      <div><h2>متقاضیان</h2><p class="muted small">پرونده افراد و سوابق آزمون‌هایشان</p></div>
-      <span class="count-pill" id="applicantCount">۰ نفر</span>
-    </div>
-    <div class="search-bar">
-      <input type="search" id="searchApplicant" placeholder="جست‌وجو با نام، شماره تماس یا پاسپورت..." />
-    </div>
-    <div class="card list-card" id="applicantsList"></div>
-  </section>
 
+    <div class="people-panel active" id="panel-applicants">
+      <div class="page-heading">
+        <h2>متقاضیان</h2>
+        <div class="heading-actions"><span class="count-pill" id="applicantCount">۰ نفر</span><button type="button" class="btn sm add-desktop" id="btnAddApplicantPage">+ متقاضی جدید</button></div>
+      </div>
+      <div class="search-bar"><input type="search" id="searchApplicant" placeholder="جست‌وجو با نام، شماره تماس یا پاسپورت..." /></div>
+      <div class="card list-card" id="applicantsList"></div>
     </div>
+
     <div class="people-panel" id="panel-teachers">
-    <div class="page-heading">
-      <div><h2>اساتید</h2><p class="muted small">مدیریت اطلاعات و سوابق همکاری اساتید</p></div>
-      <span class="count-pill" id="teacherCount">۰ استاد</span>
+      <div class="page-heading">
+        <h2>اساتید</h2>
+        <div class="heading-actions"><span class="count-pill" id="teacherCount">۰ استاد</span><button type="button" class="btn sm add-desktop" id="btnAddTeacherPage">+ استاد جدید</button></div>
+      </div>
+      <div class="search-bar"><input type="search" id="searchTeacher" placeholder="جست‌وجوی نام یا شماره تماس استاد..." /></div>
+      <div class="card list-card" id="teachersList"></div>
     </div>
-    <div class="search-bar">
-      <input type="search" id="searchTeacher" placeholder="جست‌وجوی نام یا شماره تماس استاد..." />
-    </div>
-    <div class="card list-card" id="teachersList"></div>
-    <button class="btn block" id="btnAddTeacherPage">+ افزودن استاد جدید</button>
-    </div>
+
     <div class="people-panel" id="panel-referrers">
       <div class="page-heading">
-        <div><h2>معرف‌ها</h2><p class="muted small">مدیریت اطلاعات و سوابق معرفی متقاضیان</p></div>
-        <span class="count-pill" id="referrerCount">۰ معرف</span>
+        <h2>معرف‌ها</h2>
+        <div class="heading-actions"><span class="count-pill" id="referrerCount">۰ معرف</span><button type="button" class="btn sm add-desktop" id="btnAddReferrerPage">+ معرف جدید</button></div>
       </div>
-      <div class="search-bar">
-        <input type="search" id="searchReferrer" placeholder="جست‌وجوی نام یا شماره تماس معرف..." />
-      </div>
+      <div class="search-bar"><input type="search" id="searchReferrer" placeholder="جست‌وجوی نام یا شماره تماس معرف..." /></div>
       <div class="card list-card" id="referrersPeopleList"></div>
-      <button class="btn block" id="btnAddReferrerPage">+ افزودن معرف جدید</button>
     </div>
   </section>
 
   <!-- EXAMS -->
   <section class="view" id="view-exams">
-    <div class="search-bar">
-      <select id="examStatusFilter">
-        <option value="">همه وضعیت‌ها</option>
-      </select>
+    <div class="page-heading">
+      <h2>آزمون‌ها</h2>
+      <div class="heading-actions"><span class="count-pill" id="examCount">۰ آزمون</span><button type="button" class="btn sm add-desktop" id="btnAddExamPage">+ آزمون جدید</button></div>
     </div>
-    <div class="card" id="examsList"></div>
+    <div class="search-bar"><input type="search" id="searchExam" placeholder="جست‌وجو با نام متقاضی، استاد، معرف یا نتیجه..." /></div>
+    <div class="filter-row">
+      <select id="examStatusFilter"><option value="">همه وضعیت‌ها</option></select>
+      <select id="examTypeFilter"><option value="">همه آزمون‌ها</option></select>
+    </div>
+    <div class="card list-card" id="examsList"></div>
   </section>
 
   <!-- CALENDAR -->
@@ -236,6 +233,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="./js/jalali.js"></script>
+<script src="./js/list.js"></script>
 <script src="./js/app.js"></script>
 </body>
 </html>

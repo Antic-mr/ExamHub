@@ -294,80 +294,58 @@ document.addEventListener("click", (e) => {
 /* ---------------------------------------------------------------------- */
 /* APPLICANTS                                                              */
 /* ---------------------------------------------------------------------- */
+const examCountBy = (key, id) => DATA.exams.filter(e => e[key] === id).length;
+const dashIfEmpty = (v) => (v === "" || v == null ? "" : esc(v));
+const countLabel = (n, unit) => `${n.toLocaleString("fa-IR")} ${unit}`;
+const matchQ = (q, ...vals) => !q || vals.some(v => String(v || "").toLowerCase().includes(q));
+
+const applicantsView = ListView($("#applicantsList"), {
+  defaultSort: { key: "name", dir: "asc" },
+  empty: "متقاضی‌ای یافت نشد.",
+  rowAttrs: (a) => `data-open-applicant="${a.id}"`,
+  rows: () => {
+    const q = ($("#searchApplicant").value || "").trim().toLowerCase();
+    return DATA.applicants.filter(a => matchQ(q, applicantName(a), a.phone, a.passportNumber, a.nationality));
+  },
+  columns: [
+    { key: "name", label: "نام", primary: true, sort: (a) => applicantName(a), render: (a) => `<strong>${esc(applicantName(a))}</strong>` },
+    { key: "phone", label: "شماره تماس", sort: (a) => a.phone || "", render: (a) => dashIfEmpty(a.phone) },
+    { key: "passport", label: "پاسپورت", sort: (a) => a.passportNumber || "", render: (a) => dashIfEmpty(a.passportNumber) },
+    { key: "nationality", label: "ملیت", sort: (a) => a.nationality || "", render: (a) => dashIfEmpty(a.nationality) },
+    { key: "exams", label: "آزمون‌ها", badge: true, sort: (a) => examCountBy("applicantId", a.id), render: (a) => `<span class="teacher-exam-count">${countLabel(examCountBy("applicantId", a.id), "آزمون")}</span>` },
+    { key: "created", label: "تاریخ ثبت", sort: (a) => a.createdAt || "", render: (a) => a.createdAt ? esc(Jalali.format(...Jalali.fromDate(new Date(a.createdAt)))) : "" },
+  ],
+});
 function renderApplicants() {
-  const q = ($("#searchApplicant").value || "").trim().toLowerCase();
-  let list = [...DATA.applicants];
-  if (q) list = list.filter(a =>
-    applicantName(a).toLowerCase().includes(q) ||
-    (a.phone || "").includes(q) ||
-    (a.passportNumber || "").toLowerCase().includes(q)
-  );
-  list.sort((a, b) => applicantName(a).localeCompare(applicantName(b), "fa"));
-  $("#applicantCount").textContent = `${list.length.toLocaleString("fa-IR")} نفر`;
-  $("#applicantsList").innerHTML = list.length ? list.map(a => {
-    const examCount = DATA.exams.filter(x => x.applicantId === a.id).length;
-    return `<div class="list-item" data-open-applicant="${a.id}">
-      <div class="row-content">
-        <div class="row-avatar">${esc((a.firstName || a.lastName || "؟").trim().charAt(0))}</div>
-        <div class="main"><div class="title">${esc(applicantName(a))}</div>
-          <div class="sub row-meta">${a.phone ? `<span>☎ ${esc(a.phone)}</span>` : ""}${a.passportNumber ? `<span>پاسپورت: ${esc(a.passportNumber)}</span>` : ""}</div>
-        </div>
-      </div>
-      <span class="teacher-exam-count">${examCount.toLocaleString("fa-IR")} آزمون</span><span class="muted">‹</span>
-    </div>`;
-  }).join("") : `<div class="empty">متقاضی‌ای یافت نشد.</div>`;
+  const n = applicantsView.render();
+  $("#applicantCount").textContent = countLabel(n, "نفر");
 }
-$("#searchApplicant").addEventListener("input", renderApplicants);
+$("#searchApplicant").addEventListener("input", () => { applicantsView.resetPaging(); renderApplicants(); });
+$("#btnAddApplicantPage").addEventListener("click", () => openApplicantForm(null));
 
-// Teachers are shown in their own list view; their underlying records and sync schema stay unchanged.
-function renderTeachers() {
-  const q = ($("#searchTeacher").value || "").trim().toLowerCase();
-  let list = [...DATA.teachers];
-  if (q) list = list.filter(t => (t.name || "").toLowerCase().includes(q) || (t.phone || "").includes(q));
-  list.sort((x,y) => (x.name || "").localeCompare(y.name || "", "fa"));
-  $("#teacherCount").textContent = `${list.length.toLocaleString("fa-IR")} استاد`;
-  $("#teachersList").innerHTML = list.length ? list.map(t => {
-    const exams = DATA.exams.filter(e => e.teacherId === t.id);
-    return `<div class="list-item">
-      <div class="row-content">
-        <div class="row-avatar">ا</div>
-        <div class="main"><div class="title">${esc(t.name)}</div>
-          <div class="sub row-meta">${t.phone ? `<span>☎ ${esc(t.phone)}</span>` : "<span>شماره تماسی ثبت نشده</span>"}</div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span class="teacher-exam-count">${exams.length.toLocaleString("fa-IR")} آزمون</span>
-        <button class="btn ghost sm" data-edit-teacher="${t.id}">ویرایش</button>
-      </div>
-    </div>`;
-  }).join("") : `<div class="empty">استادی ثبت نشده است. از دکمه افزودن استاد شروع کنید.</div>`;
+function simplePeopleView(el, store, searchSel, countSel, unit, examKey, editAttr, label) {
+  const view = ListView(el, {
+    defaultSort: { key: "name", dir: "asc" },
+    empty: `${label}ی ثبت نشده است. از دکمه «+» شروع کنید.`,
+    rowAttrs: (r) => `${editAttr}="${r.id}"`,
+    rows: () => {
+      const q = ($(searchSel).value || "").trim().toLowerCase();
+      return DATA[store].filter(r => matchQ(q, r.name, r.phone, r.notes));
+    },
+    columns: [
+      { key: "name", label: "نام", primary: true, sort: (r) => r.name || "", render: (r) => `<strong>${esc(r.name)}</strong>` },
+      { key: "phone", label: "شماره تماس", sort: (r) => r.phone || "", render: (r) => dashIfEmpty(r.phone) },
+      { key: "count", label: "آزمون‌ها", badge: true, sort: (r) => examCountBy(examKey, r.id), render: (r) => `<span class="teacher-exam-count">${countLabel(examCountBy(examKey, r.id), "آزمون")}</span>` },
+      { key: "notes", label: "توضیحات", sort: (r) => r.notes || "", render: (r) => dashIfEmpty(r.notes) },
+    ],
+  });
+  $(searchSel).addEventListener("input", () => { view.resetPaging(); render(); });
+  function render() { $(countSel).textContent = countLabel(view.render(), unit); }
+  return render;
 }
-$("#searchTeacher").addEventListener("input", renderTeachers);
+const renderTeachers = simplePeopleView($("#teachersList"), "teachers", "#searchTeacher", "#teacherCount", "استاد", "teacherId", "data-edit-teacher", "استاد");
+const renderReferrers = simplePeopleView($("#referrersPeopleList"), "referrers", "#searchReferrer", "#referrerCount", "معرف", "referrerId", "data-edit-referrer", "معرف");
 $("#btnAddTeacherPage").addEventListener("click", () => openPersonForm("teachers"));
-
-function renderReferrers() {
-  const q = ($("#searchReferrer").value || "").trim().toLowerCase();
-  let list = [...DATA.referrers];
-  if (q) list = list.filter(r => (r.name || "").toLowerCase().includes(q) || (r.phone || "").includes(q));
-  list.sort((a,b) => (a.name || "").localeCompare(b.name || "", "fa"));
-  $("#referrerCount").textContent = `${list.length.toLocaleString("fa-IR")} معرف`;
-  $("#referrersPeopleList").innerHTML = list.length ? list.map(r => {
-    const exams = DATA.exams.filter(e => e.referrerId === r.id);
-    return `<div class="list-item">
-      <div class="row-content">
-        <div class="row-avatar">م</div>
-        <div class="main"><div class="title">${esc(r.name)}</div>
-          <div class="sub row-meta">${r.phone ? `<span>☎ ${esc(r.phone)}</span>` : "<span>شماره تماسی ثبت نشده</span>"}</div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span class="teacher-exam-count">${exams.length.toLocaleString("fa-IR")} معرفی</span>
-        <button class="btn ghost sm" data-edit-referrer="${r.id}">ویرایش</button>
-      </div>
-    </div>`;
-  }).join("") : `<div class="empty">معرفی ثبت نشده است. از دکمه افزودن معرف شروع کنید.</div>`;
-}
-$("#searchReferrer").addEventListener("input", renderReferrers);
 $("#btnAddReferrerPage").addEventListener("click", () => openPersonForm("referrers"));
 
 let activePeopleTab = "applicants";
@@ -472,13 +450,40 @@ function openApplicantModal(id) {
 /* ---------------------------------------------------------------------- */
 /* EXAMS                                                                   */
 /* ---------------------------------------------------------------------- */
+const STATUS_ORDER = Object.keys(STATUS_LABEL);
+const examsView = ListView($("#examsList"), {
+  defaultSort: { key: "date", dir: "desc" },
+  empty: "آزمونی یافت نشد.",
+  rowAttrs: (e) => `data-open-exam="${e.id}"`,
+  rows: () => {
+    const q = ($("#searchExam").value || "").trim().toLowerCase();
+    const st = $("#examStatusFilter").value, tp = $("#examTypeFilter").value.toLowerCase();
+    return DATA.exams.filter(e =>
+      (!st || e.status === st) && (!tp || (e.examType || "").trim().toLowerCase() === tp) &&
+      matchQ(q, applicantName(getApplicant(e.applicantId)), getTeacher(e.teacherId)?.name, getReferrer(e.referrerId)?.name, e.result, e.notes));
+  },
+  columns: [
+    { key: "applicant", label: "متقاضی", primary: true, sort: (e) => applicantName(getApplicant(e.applicantId)), render: (e) => `<strong>${esc(applicantName(getApplicant(e.applicantId)))}</strong>` },
+    { key: "type", label: "آزمون", sort: (e) => e.examType || "", render: (e) => dashIfEmpty(e.examType) },
+    { key: "date", label: "تاریخ", sort: (e) => examSortKey(e), render: (e) => e.examDateJ ? esc(Jalali.format(...e.examDateJ)) : "" },
+    { key: "time", label: "ساعت", sort: (e) => e.examTime || "", render: (e) => dashIfEmpty(e.examTime) },
+    { key: "status", label: "وضعیت", badge: true, sort: (e) => STATUS_ORDER.indexOf(e.status), render: (e) => `<span class="chip ${e.status}">${esc(STATUS_LABEL[e.status] || e.status)}</span>` },
+    { key: "teacher", label: "استاد", sort: (e) => getTeacher(e.teacherId)?.name || "", render: (e) => dashIfEmpty(getTeacher(e.teacherId)?.name) },
+    { key: "referrer", label: "معرف", sort: (e) => getReferrer(e.referrerId)?.name || "", render: (e) => dashIfEmpty(getReferrer(e.referrerId)?.name) },
+    { key: "amount", label: "مبلغ (تومان)", sort: (e) => Number(e.amount) || 0, render: (e) => Number(e.amount) ? fmtMoney(e.amount) : "" },
+    { key: "result", label: "نتیجه", sort: (e) => e.result || "", render: (e) => dashIfEmpty(e.result) },
+  ],
+});
 function renderExams() {
-  const statusF = $("#examStatusFilter").value;
-  let list = [...DATA.exams];
-  if (statusF) list = list.filter(e => e.status === statusF);
-  list.sort((a, b) => examSortKey(b) - examSortKey(a));
-  $("#examsList").innerHTML = list.length ? renderExamRows(list) : `<div class="empty">آزمونی یافت نشد.</div>`;
+  const sel = $("#examTypeFilter"), cur = sel.value;
+  const names = [...new Set([...DATA.examTypes.map(t => t.name), ...DATA.exams.map(e => e.examType)].map(x => (x || "").trim()).filter(Boolean))];
+  sel.innerHTML = `<option value="">همه آزمون‌ها</option>` + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  sel.value = names.some(n => n === cur) ? cur : "";
+  $("#examCount").textContent = countLabel(examsView.render(), "آزمون");
 }
+$("#searchExam").addEventListener("input", () => { examsView.resetPaging(); renderExams(); });
+$("#examTypeFilter").addEventListener("change", () => { examsView.resetPaging(); renderExams(); });
+$("#btnAddExamPage").addEventListener("click", () => openExamForm(null));
 $("#examStatusFilter").addEventListener("change", renderExams);
 
 function applicantOptions(selectedId) {
