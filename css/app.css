@@ -206,3 +206,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);outline
 .agenda-card{padding:10px 12px}
 .agenda-card .empty{padding:14px 6px}
 @media(min-width:600px){.calendar-grid .day{height:38px;max-height:none}}
+
+/* --- exam status chips + calendar legend --- */
+.chip.requested{background:#e2e8f0;color:#334155}
+.chip.awaiting{background:#cffafe;color:#0e7490}
+.chip.success{background:#bbf7d0;color:#166534}
+.chip.suspended{background:#ffedd5;color:#c2410c}
+.chip.banned{background:#9f1239;color:#fff}
+.chip.cancelled_by{background:#fce7f3;color:#9d174d}
+[data-theme="dark"] .chip.requested{background:#33415599;color:#cbd5e1}
+[data-theme="dark"] .chip.awaiting{background:#164e6355;color:#67e8f9}
+[data-theme="dark"] .chip.success{background:#14532d77;color:#86efac}
+[data-theme="dark"] .chip.suspended{background:#7c2d1255;color:#fdba74}
+[data-theme="dark"] .chip.cancelled_by{background:#83184355;color:#f9a8d4}
+.legend-dot.open{background:#0f766e}.legend-dot.past{background:#22c55e}.legend-dot.hold{background:#f59e0b}.legend-dot.bad{background:#e11d48}

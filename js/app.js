@@ -26,7 +26,26 @@ function toast(msg) {
 function fmtMoney(n) { n = Number(n) || 0; return n.toLocaleString("en-US"); }
 function todayJalaliStr() { const j = Jalali.fromDate(new Date()); return Jalali.format(...j); }
 
-const STATUS_LABEL = { upcoming: "پیش‌رو", done: "انجام‌شده", cancelled: "لغوشده", rescheduled: "تغییر تاریخ" };
+// Keys of upcoming/done/cancelled/rescheduled are kept so existing data and sheet rows stay valid.
+const STATUS_LABEL = {
+  requested: "متقاضی آزمون",
+  upcoming: "ثبت‌نام شده",
+  rescheduled: "تغییر تاریخ",
+  done: "آزمون داده",
+  awaiting: "منتظر نتیجه",
+  success: "موفق",
+  suspended: "معلق",
+  banned: "بن شده",
+  cancelled: "کنسل شده",
+  cancelled_by: "کنسل کرده",
+};
+// Older labels that may still sit in the Google Sheet.
+const STATUS_ALIASES = { "پیش‌رو": "upcoming", "انجام‌شده": "done", "لغوشده": "cancelled" };
+// kind drives dashboard counts and calendar colours: open = waiting for the exam day, past = exam taken,
+// hold = not decided yet, bad = did not happen.
+const STATUS_KIND = { requested: "hold", upcoming: "open", rescheduled: "open", done: "past", awaiting: "past", success: "past", suspended: "hold", banned: "bad", cancelled: "bad", cancelled_by: "bad" };
+$("#examStatusFilter").insertAdjacentHTML("beforeend", Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""));
+$("#repStatus").insertAdjacentHTML("beforeend", Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""));
 
 /* ---------------------------------------------------------------------- */
 /* IndexedDB layer                                                        */
@@ -219,7 +238,7 @@ function isAhead(e) {
   if (!e.examDateJ) return true;
   return jalaliValue(e.examDateJ) >= jalaliValue(Jalali.fromDate(new Date()));
 }
-const isOpen = (e) => e.status === "upcoming" || e.status === "rescheduled";
+const isOpen = (e) => STATUS_KIND[e.status] === "open";
 
 function renderDashboard() {
   $("#statApplicants").textContent = DATA.applicants.length;
@@ -227,8 +246,8 @@ function renderDashboard() {
   const overdue = DATA.exams.filter(e => isOpen(e) && !isAhead(e)).length;
   const note = $("#overdueNote");
   note.style.display = overdue ? "block" : "none";
-  note.textContent = overdue ? `⚠️ ${overdue} آزمون با تاریخ گذشته هنوز «پیش‌رو» است — برای بررسی بزنید` : "";
-  $("#statDone").textContent = DATA.exams.filter(e => e.status === "done").length;
+  note.textContent = overdue ? `⚠️ ${overdue} آزمون با تاریخ گذشته هنوز «ثبت‌نام شده» است — برای بررسی بزنید` : "";
+  $("#statDone").textContent = DATA.exams.filter(e => STATUS_KIND[e.status] === "past").length;
   const totalAmount = DATA.exams.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   $("#statAmount").textContent = fmtMoney(totalAmount);
 
@@ -592,9 +611,10 @@ function renderCalendar() {
     const isToday = todayJ[0]===calJY && todayJ[1]===calJM && todayJ[2]===d;
     const list = examsByDay[d] || [];
     const hasAny = list.length > 0;
-    const colorClass = hasAny ? (list.every(e=>e.status==="cancelled") ? "cancelled" : list.some(e=>e.status==="upcoming"||e.status==="rescheduled") ? "upcoming" : "done") : "";
+    const kinds = list.map(e => STATUS_KIND[e.status] || "open");
+    const colorClass = !hasAny ? "" : kinds.every(k => k === "bad") ? "bad" : kinds.includes("open") ? "open" : kinds.includes("hold") ? "hold" : "past";
     html += `<button type="button" class="day ${isToday?"today":""} ${hasAny?"has-exam":""} ${calSelectedDay===d?"selected":""}" data-day="${d}" aria-label="${d} ${list.length ? "، " + list.length + " آزمون" : ""}">
-      <span>${d.toLocaleString("fa-IR")}</span>${hasAny ? `<span class="dot ${colorClass}" style="background:${colorClass==="upcoming"?"#3b82f6":colorClass==="done"?"#22c55e":"#ef4444"}"></span>` : ""}
+      <span>${d.toLocaleString("fa-IR")}</span>${hasAny ? `<span class="dot ${colorClass}" style="background:${{open:"#0f766e",past:"#22c55e",hold:"#f59e0b",bad:"#e11d48"}[colorClass]}"></span>` : ""}
     </button>`;
   }
   $("#calGrid").innerHTML = html;
@@ -924,7 +944,7 @@ function fromRow(store, row) {
     let history = [];
     try { const h = JSON.parse(s("history") || "[]"); if (Array.isArray(h)) history = h; } catch { /* keep [] */ }
     return { id, applicantId: s("applicantId"), examType: s("examType"),
-      status: STATUS_KEY_BY_LABEL[st] || (STATUS_LABEL[st] ? st : "upcoming"),
+      status: STATUS_KEY_BY_LABEL[st] || STATUS_ALIASES[st] || (STATUS_LABEL[st] ? st : "upcoming"),
       examDateJ: Jalali.parse(s("examDate")), examTime: toLatinDigits(s("examTime")).trim(),
       teacherId: s("teacherId"), referrerId: s("referrerId"),
       amount: Number(toLatinDigits(s("amount")).replace(/[,٬\s]/g, "")) || 0,

@@ -26,7 +26,7 @@
     <div class="grid-stats mb8">
       <div class="stat"><div class="num" id="statApplicants">0</div><div class="lbl">کل متقاضیان</div></div>
       <div class="stat"><div class="num" id="statUpcoming">0</div><div class="lbl">آزمون پیش‌رو</div></div>
-      <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">آزمون انجام‌شده</div></div>
+      <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">آزمون داده‌شده</div></div>
       <div class="stat"><div class="num" id="statAmount">0</div><div class="lbl">مجموع دریافتی (تومان)</div></div>
     </div>
     <div id="overdueNote" class="card" style="display:none; cursor:pointer; font-size:13px; border-color:var(--warn)"></div>
@@ -92,10 +92,6 @@
     <div class="search-bar">
       <select id="examStatusFilter">
         <option value="">همه وضعیت‌ها</option>
-        <option value="upcoming">پیش‌رو</option>
-        <option value="done">انجام‌شده</option>
-        <option value="cancelled">لغوشده</option>
-        <option value="rescheduled">تغییر تاریخ</option>
       </select>
     </div>
     <div class="card" id="examsList"></div>
@@ -114,7 +110,7 @@
         <button class="btn secondary sm" id="calNext">ماه بعد</button>
       </div>
       <div class="calendar-grid" id="calGrid"></div>
-      <div class="calendar-legend"><span><i class="legend-dot upcoming"></i> پیش‌رو</span><span><i class="legend-dot done"></i> انجام‌شده</span><span><i class="legend-dot cancelled"></i> لغوشده</span></div>
+      <div class="calendar-legend"><span><i class="legend-dot open"></i> در انتظار آزمون</span><span><i class="legend-dot past"></i> آزمون داده / نتیجه</span><span><i class="legend-dot hold"></i> معلق / متقاضی</span><span><i class="legend-dot bad"></i> کنسل / بن</span></div>
     </div>
     <div class="card agenda-card">
       <div class="flex-between mb8"><h2 id="calSelectedTitle">برنامه روز</h2><span class="muted small" id="calSelectedCount"></span></div>
@@ -134,10 +130,6 @@
         <div><label>نوع آزمون</label><select id="repType"><option value="">همه</option></select></div>
         <div><label>وضعیت</label><select id="repStatus">
           <option value="">همه</option>
-          <option value="upcoming">پیش‌رو</option>
-          <option value="done">انجام‌شده</option>
-          <option value="cancelled">لغوشده</option>
-          <option value="rescheduled">تغییر تاریخ</option>
         </select></div>
       </div>
       <div class="row">
