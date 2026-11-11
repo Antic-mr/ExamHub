@@ -131,20 +131,21 @@ table th{color:var(--muted); font-weight:600; font-size:12px}
 .list-card .row-content{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
 .list-card .row-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .teacher-exam-count{font-size:11px;color:var(--muted);background:var(--bg);padding:3px 8px;border-radius:20px}
-.calendar-card{padding:12px}
-.calendar-grid{gap:5px}
-.calendar-grid .dow{font-weight:700;padding:7px 0}
-.calendar-grid .day{min-height:40px;aspect-ratio:1;border-radius:12px;font-weight:600;transition:background .15s,border-color .15s}
+.calendar-card{padding:10px}
+.calendar-grid{gap:3px}
+.calendar-grid .dow{font-weight:700;font-size:10px;padding:4px 0}
+.calendar-grid .day{min-height:0;max-height:42px;width:100%;aspect-ratio:1;padding:2px 0;border-radius:9px;font-size:11px;font-weight:600;transition:background .15s,border-color .15s}
 .calendar-grid .day.selected{background:var(--primary)!important;color:#fff;border-color:var(--primary)}
 .calendar-grid .day.selected .dot{background:#fff!important}
 .calendar-grid .day.has-exam{font-weight:800}
-.calendar-legend{display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:10px;padding-top:10px;color:var(--muted);font-size:11px}
+.calendar-grid .day .dot{width:4px;height:4px;margin-top:1px}
+.calendar-legend{display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:8px;padding-top:8px;color:var(--muted);font-size:10px}
 .calendar-legend span{display:flex;align-items:center;gap:5px}
 .legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .legend-dot.upcoming{background:#3b82f6}.legend-dot.done{background:#22c55e}.legend-dot.cancelled{background:#ef4444}
 .agenda-card h2{margin:0;font-size:14px}
-.agenda-list .list-item{padding:12px 2px;cursor:pointer}
-@media(min-width:600px){.calendar-grid{gap:8px}.calendar-grid .day{min-height:48px}.list-card{padding:6px 16px}}
+.agenda-list .list-item{padding:10px 2px;cursor:pointer}
+@media(min-width:600px){.calendar-grid{gap:6px}.calendar-grid .day{max-height:46px}.list-card{padding:6px 16px}}
 
 .modal-overlay{
   position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:none;
