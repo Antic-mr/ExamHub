@@ -285,8 +285,7 @@ $$(".tab-btn").forEach(b => b.addEventListener("click", () => showView(b.dataset
 
 function render(name) {
   if (name === "dashboard") renderDashboard();
-  else if (name === "applicants") renderApplicants();
-  else if (name === "teachers") renderTeachers();
+  else if (name === "people") setPeopleTab(activePeopleTab);
   else if (name === "exams") renderExams();
   else if (name === "calendar") renderCalendar();
   else if (name === "reports") renderReportsSetup();
@@ -430,6 +429,47 @@ function renderTeachers() {
 }
 $("#searchTeacher").addEventListener("input", renderTeachers);
 $("#btnAddTeacherPage").addEventListener("click", () => openPersonForm("teachers"));
+
+function renderReferrers() {
+  const q = ($("#searchReferrer").value || "").trim().toLowerCase();
+  let list = [...DATA.referrers];
+  if (q) list = list.filter(r => (r.name || "").toLowerCase().includes(q) || (r.phone || "").includes(q));
+  list.sort((a,b) => (a.name || "").localeCompare(b.name || "", "fa"));
+  $("#referrerCount").textContent = `${list.length.toLocaleString("fa-IR")} معرف`;
+  $("#referrersPeopleList").innerHTML = list.length ? list.map(r => {
+    const exams = DATA.exams.filter(e => e.referrerId === r.id);
+    return `<div class="list-item">
+      <div class="row-content">
+        <div class="row-avatar">م</div>
+        <div class="main"><div class="title">${esc(r.name)}</div>
+          <div class="sub row-meta">${r.phone ? `<span>☎ ${esc(r.phone)}</span>` : "<span>شماره تماسی ثبت نشده</span>"}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="teacher-exam-count">${exams.length.toLocaleString("fa-IR")} معرفی</span>
+        <button class="btn ghost sm" data-edit-referrer="${r.id}">ویرایش</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty">معرفی ثبت نشده است. از دکمه افزودن معرف شروع کنید.</div>`;
+}
+$("#searchReferrer").addEventListener("input", renderReferrers);
+$("#btnAddReferrerPage").addEventListener("click", () => openPersonForm("referrers"));
+
+let activePeopleTab = "applicants";
+function setPeopleTab(name) {
+  if (!["applicants", "teachers", "referrers"].includes(name)) name = "applicants";
+  activePeopleTab = name;
+  $(".people-tab").forEach(b => {
+    const active = b.dataset.peopleTab === name;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  $(".people-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${name}`));
+  if (name === "applicants") renderApplicants();
+  else if (name === "teachers") renderTeachers();
+  else renderReferrers();
+}
+$(".people-tab").forEach(b => b.addEventListener("click", () => setPeopleTab(b.dataset.peopleTab)));
 
 function applicantFormHtml(a = {}) {
   return `
@@ -817,12 +857,6 @@ document.addEventListener("click", (e) => {
 /* SETTINGS: teachers / referrers / exam types / backup                   */
 /* ---------------------------------------------------------------------- */
 function renderSettings() {
-  $("#referrersList").innerHTML = DATA.referrers.length ? DATA.referrers.map(r => `
-    <div class="list-item">
-      <div class="main"><div class="title">${esc(r.name)}</div><div class="sub">${esc(r.phone||"")}</div></div>
-      <div><button class="btn ghost sm" data-edit-referrer="${r.id}">ویرایش</button></div>
-    </div>`).join("") : `<div class="empty">معرفی ثبت نشده.</div>`;
-
   $("#examTypesList").innerHTML = DATA.examTypes.length ? DATA.examTypes.map(t => `
     <div class="list-item">
       <div class="main"><div class="title">${esc(t.name)}</div></div>
@@ -872,14 +906,13 @@ function openPersonForm(store, id) {
     ev.preventDefault();
     const fd = new FormData(ev.target);
     await storePut(store, { id: rec?.id || uid(), name: fd.get("name").trim(), phone: fd.get("phone").trim(), notes: fd.get("notes").trim() });
-    await refreshAll(); closeModal(); toast("ذخیره شد"); renderSettings(); renderTeachers();
+    await refreshAll(); closeModal(); toast("ذخیره شد"); renderSettings(); renderTeachers(); renderReferrers();
   });
   if (id) $("#mDelete").onclick = () => confirmDialog(`این ${label} حذف شود؟`, async () => {
-    await storeDelete(store, id); await refreshAll(); closeModal(); renderSettings(); renderTeachers();
+    await storeDelete(store, id); await refreshAll(); closeModal(); renderSettings(); renderTeachers(); renderReferrers();
   });
 }
 
-$("#btnAddReferrer").addEventListener("click", () => openPersonForm("referrers"));
 $("#btnAddExamType").addEventListener("click", () => {
   openModal(`
     <div class="modal-head"><h3>نوع آزمون جدید</h3><button class="icon-btn" id="mClose">✕</button></div>
@@ -1181,8 +1214,11 @@ document.addEventListener("visibilitychange", () => {
 /* ---------------------------------------------------------------------- */
 $("#btnFab").addEventListener("click", () => {
   const active = $(".tab-btn.active")?.dataset.view;
-  if (active === "applicants") openApplicantForm(null);
-  else if (active === "exams") openExamForm(null);
+  if (active === "people") {
+    if (activePeopleTab === "teachers") openPersonForm("teachers");
+    else if (activePeopleTab === "referrers") openPersonForm("referrers");
+    else openApplicantForm(null);
+  } else if (active === "exams") openExamForm(null);
   else openApplicantForm(null);
 });
 
