@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#2563eb" />
+<title>ExamHub - دفتر مدیریت آزمون</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" href="./icon-192.png" />
+<style>
+:root{
+  --bg:#f4f6fb; --surface:#ffffff; --text:#0f172a; --muted:#64748b;
+  --border:#e2e8f0; --primary:#2563eb; --primary-d:#1d4ed8; --danger:#dc2626;
+  --ok:#16a34a; --warn:#d97706; --info:#0891b2; --radius:14px;
+  --shadow:0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.06);
+}
+[data-theme="dark"]{
+  --bg:#0f141b; --surface:#171d27; --text:#e7ecf3; --muted:#92a0b3;
+  --border:#2a3341; --primary:#3b82f6; --primary-d:#2563eb; --danger:#f87171;
+  --ok:#4ade80; --warn:#fbbf24; --info:#22d3ee;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Vazirmatn","Tahoma","Segoe UI",sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh;
+  padding-bottom:70px; -webkit-tap-highlight-color:transparent;
+}
+a{color:inherit}
+button{font-family:inherit}
+header.topbar{
+  position:sticky; top:0; z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--border); padding:10px 14px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+header.topbar h1{font-size:16px; margin:0; font-weight:700}
+header.topbar .top-actions{display:flex; gap:6px}
+.icon-btn{
+  background:transparent; border:1px solid var(--border); border-radius:10px;
+  width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+  font-size:16px; cursor:pointer; color:var(--text);
+}
+main{padding:12px; max-width:720px; margin:0 auto}
+.view{display:none}
+.view.active{display:block}
+
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; margin-bottom:12px}
+.card h2{margin:0 0 10px; font-size:15px}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.grid-stats{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+.stat{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px; box-shadow:var(--shadow)}
+.stat .num{font-size:22px; font-weight:800}
+.stat .lbl{font-size:12px; color:var(--muted); margin-top:2px}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  background:var(--primary); color:#fff; border:none; border-radius:12px;
+  padding:11px 16px; font-size:14px; font-weight:700; cursor:pointer; min-height:44px;
+}
+.btn:active{background:var(--primary-d)}
+.btn.secondary{background:transparent; color:var(--text); border:1px solid var(--border)}
+.btn.danger{background:var(--danger)}
+.btn.ghost{background:transparent; color:var(--primary); padding:6px 10px; min-height:auto}
+.btn.block{width:100%}
+.btn.sm{padding:6px 10px; font-size:12px; min-height:34px}
+
+.fab{
+  position:fixed; left:16px; bottom:76px; z-index:25; width:54px; height:54px; border-radius:50%;
+  background:var(--primary); color:#fff; border:none; font-size:26px; box-shadow:0 6px 16px rgba(37,99,235,.4);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+
+nav.tabbar{
+  position:fixed; bottom:0; right:0; left:0; z-index:20; background:var(--surface);
+  border-top:1px solid var(--border); display:flex; justify-content:space-around;
+  padding:4px 2px env(safe-area-inset-bottom);
+}
+nav.tabbar button{
+  flex:1; background:transparent; border:none; color:var(--muted); font-size:11px;
+  display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 2px; cursor:pointer; border-radius:10px;
+}
+nav.tabbar button .ic{font-size:18px}
+nav.tabbar button.active{color:var(--primary); font-weight:700}
+
+input, select, textarea{
+  width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
+  background:var(--bg); color:var(--text); font-size:14px; font-family:inherit;
+}
+label{display:block; font-size:12px; color:var(--muted); margin:10px 0 4px}
+.field{margin-bottom:4px}
+form .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+
+table{width:100%; border-collapse:collapse; font-size:13px}
+table th, table td{padding:8px 6px; border-bottom:1px solid var(--border); text-align:right}
+table th{color:var(--muted); font-weight:600; font-size:12px}
+.table-wrap{overflow-x:auto}
+
+.chip{display:inline-flex; align-items:center; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700}
+.chip.upcoming{background:#dbeafe;color:#1d4ed8}
+.chip.done{background:#dcfce7;color:#15803d}
+.chip.cancelled{background:#fee2e2;color:#b91c1c}
+.chip.rescheduled{background:#fef3c7;color:#b45309}
+[data-theme="dark"] .chip.upcoming{background:#1e3a8a55;color:#93c5fd}
+[data-theme="dark"] .chip.done{background:#14532d55;color:#86efac}
+[data-theme="dark"] .chip.cancelled{background:#7f1d1d55;color:#fca5a5}
+[data-theme="dark"] .chip.rescheduled{background:#78350f55;color:#fcd34d}
+
+.list-item{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--border)}
+.list-item:last-child{border-bottom:none}
+.list-item .main{min-width:0}
+.list-item .title{font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.list-item .sub{font-size:12px; color:var(--muted); margin-top:2px}
+
+.search-bar{display:flex; gap:8px; margin-bottom:10px}
+
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:none;
+  align-items:flex-end; justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--surface); width:100%; max-width:720px; max-height:92vh; overflow-y:auto;
+  border-radius:18px 18px 0 0; padding:16px; animation:slideUp .18s ease-out;
+}
+@keyframes slideUp{from{transform:translateY(16px); opacity:.6} to{transform:none; opacity:1}}
+.modal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px}
+.modal-head h3{margin:0; font-size:16px}
+.modal-actions{display:flex; gap:8px; margin-top:16px}
+
+.toast{
+  position:fixed; bottom:84px; left:50%; transform:translateX(-50%); z-index:60;
+  background:var(--text); color:var(--bg); padding:10px 16px; border-radius:30px; font-size:13px;
+  box-shadow:var(--shadow); opacity:0; transition:opacity .2s; pointer-events:none;
+}
+.toast.show{opacity:1}
+
+.empty{text-align:center; color:var(--muted); padding:30px 10px; font-size:13px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.flex-between{display:flex; justify-content:space-between; align-items:center; gap:8px}
+.mb8{margin-bottom:8px}
+.calendar-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center}
+.calendar-grid .dow{font-size:11px; color:var(--muted); padding:4px 0}
+.calendar-grid .day{
+  aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-radius:10px; font-size:12px; cursor:pointer; border:1px solid transparent; position:relative;
+}
+.calendar-grid .day.today{border-color:var(--primary)}
+.calendar-grid .day.empty{visibility:hidden}
+.calendar-grid .day .dot{width:5px; height:5px; border-radius:50%; margin-top:2px}
+.calendar-grid .day.has-exam{background:var(--bg)}
+textarea.msg{min-height:120px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>📘 ExamHub</h1>
+  <div class="top-actions">
+    <button class="icon-btn" id="btnSync" title="همگام‌سازی">☁️</button>
+    <button class="icon-btn" id="btnTheme" title="تغییر تم">🌓</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <div class="grid-stats mb8">
+      <div class="stat"><div class="num" id="statApplicants">0</div><div class="lbl">کل متقاضیان</div></div>
+      <div class="stat"><div class="num" id="statUpcoming">0</div><div class="lbl">آزمون پیش‌رو</div></div>
+      <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">آزمون انجام‌شده</div></div>
+      <div class="stat"><div class="num" id="statAmount">0</div><div class="lbl">مجموع دریافتی (تومان)</div></div>
+    </div>
+    <div id="overdueNote" class="card" style="display:none; cursor:pointer; font-size:13px; border-color:var(--warn)"></div>
+    <div class="card">
+      <h2>آزمون‌های امروز</h2>
+      <div id="todayExams" class="empty">آزمونی برای امروز ثبت نشده.</div>
+    </div>
+    <div class="card">
+      <h2>آزمون‌های نزدیک</h2>
+      <div id="upcomingExams" class="empty">آزمونی ثبت نشده.</div>
+    </div>
+    <div class="card">
+      <h2>آخرین متقاضیان ثبت‌شده</h2>
+      <div id="recentApplicants" class="empty">متقاضی‌ای ثبت نشده.</div>
+    </div>
+  </section>
+
+  <!-- APPLICANTS -->
+  <section class="view" id="view-applicants">
+    <div class="search-bar">
+      <input type="search" id="searchApplicant" placeholder="جست‌وجو با نام، تماس یا پاسپورت..." />
+    </div>
+    <div class="card" id="applicantsList"></div>
+  </section>
+
+  <!-- EXAMS -->
+  <section class="view" id="view-exams">
+    <div class="search-bar">
+      <select id="examStatusFilter">
+        <option value="">همه وضعیت‌ها</option>
+        <option value="upcoming">پیش‌رو</option>
+        <option value="done">انجام‌شده</option>
+        <option value="cancelled">لغوشده</option>
+        <option value="rescheduled">تغییر تاریخ</option>
+      </select>
+    </div>
+    <div class="card" id="examsList"></div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="view" id="view-calendar">
+    <div class="card">
+      <div class="flex-between mb8">
+        <button class="btn secondary sm" id="calPrev">◀ ماه قبل</button>
+        <strong id="calTitle">-</strong>
+        <button class="btn secondary sm" id="calNext">ماه بعد ▶</button>
+      </div>
+      <div class="calendar-grid" id="calGrid"></div>
+    </div>
+    <div class="card">
+      <h2>آزمون‌های روز انتخاب‌شده</h2>
+      <div id="calDayExams" class="empty">روزی را انتخاب کنید.</div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section class="view" id="view-reports">
+    <div class="card">
+      <h2>فیلتر گزارش</h2>
+      <div class="row">
+        <div><label>از تاریخ (شمسی)</label><input id="repFrom" placeholder="1403/01/01"/></div>
+        <div><label>تا تاریخ (شمسی)</label><input id="repTo" placeholder="1403/12/29"/></div>
+      </div>
+      <div class="row">
+        <div><label>نوع آزمون</label><select id="repType"><option value="">همه</option></select></div>
+        <div><label>وضعیت</label><select id="repStatus">
+          <option value="">همه</option>
+          <option value="upcoming">پیش‌رو</option>
+          <option value="done">انجام‌شده</option>
+          <option value="cancelled">لغوشده</option>
+          <option value="rescheduled">تغییر تاریخ</option>
+        </select></div>
+      </div>
+      <div class="row">
+        <div><label>استاد</label><select id="repTeacher"><option value="">همه</option></select></div>
+        <div><label>معرف</label><select id="repReferrer"><option value="">همه</option></select></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn block" id="btnRunReport">نمایش گزارش</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="flex-between mb8">
+        <h2 style="margin:0">نتیجه گزارش</h2>
+        <button class="btn secondary sm" id="btnExportExcel">خروجی Excel</button>
+      </div>
+      <div id="reportSummary" class="small muted mb8"></div>
+      <div class="table-wrap"><table id="reportTable"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- MESSAGES -->
+  <section class="view" id="view-messages">
+    <div class="card">
+      <h2>انتخاب آزمون</h2>
+      <select id="msgExamSelect"><option value="">— یک آزمون انتخاب کنید —</option></select>
+    </div>
+    <div class="card" id="msgArea" style="display:none">
+      <div class="flex-between mb8">
+        <h2 style="margin:0">پیام متقاضی</h2>
+        <button class="btn ghost sm" data-copy="msgApplicant">کپی</button>
+      </div>
+      <textarea class="msg" id="msgApplicant"></textarea>
+
+      <div class="flex-between mb8" style="margin-top:16px">
+        <h2 style="margin:0">پیام استاد</h2>
+        <button class="btn ghost sm" data-copy="msgTeacher">کپی</button>
+      </div>
+      <textarea class="msg" id="msgTeacher"></textarea>
+
+      <div class="flex-between mb8" style="margin-top:16px">
+        <h2 style="margin:0">پیام معرف</h2>
+        <button class="btn ghost sm" data-copy="msgReferrer">کپی</button>
+      </div>
+      <textarea class="msg" id="msgReferrer"></textarea>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="view-settings">
+    <div class="card">
+      <h2>استادان</h2>
+      <div id="teachersList"></div>
+      <button class="btn secondary block" id="btnAddTeacher" style="margin-top:8px">+ افزودن استاد</button>
+    </div>
+    <div class="card">
+      <h2>معرف‌ها</h2>
+      <div id="referrersList"></div>
+      <button class="btn secondary block" id="btnAddReferrer" style="margin-top:8px">+ افزودن معرف</button>
+    </div>
+    <div class="card">
+      <h2>انواع آزمون</h2>
+      <div id="examTypesList"></div>
+      <button class="btn secondary block" id="btnAddExamType" style="margin-top:8px">+ افزودن نوع آزمون</button>
+    </div>
+    <div class="card" id="syncCard">
+      <h2>همگام‌سازی با Google Sheets</h2>
+      <p class="small muted" id="syncStatusText">همگام‌سازی غیرفعال است</p>
+      <label>آدرس Web App (Apps Script)</label>
+      <input id="syncUrl" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+      <label>توکن مخفی</label>
+      <input id="syncToken" type="password" dir="ltr" autocomplete="off" placeholder="توکن مخفی" />
+      <div class="modal-actions">
+        <button class="btn block" id="btnSyncSave">ذخیره و اتصال</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary block" id="btnSyncNow">همگام‌سازی الان</button>
+        <button class="btn secondary block" id="btnSyncOff">قطع اتصال</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>پشتیبان‌گیری و بازیابی</h2>
+      <p class="small muted" id="lastBackupInfo">هنوز پشتیبانی تهیه نشده.</p>
+      <button class="btn block mb8" id="btnBackup">⬇️ تهیه پشتیبان (JSON)</button>
+      <input type="file" id="fileRestore" accept="application/json" style="display:none" />
+      <button class="btn secondary block" id="btnRestore">⬆️ بازیابی از پشتیبان</button>
+    </div>
+    <div class="card">
+      <h2>درباره و وضعیت</h2>
+      <p class="small muted">
+        نسخه فعلی: مرحله ۳ (مدیریت متقاضیان، آزمون‌ها، استاد/معرف، داشبورد، تقویم شمسی، پیام تلگرام، گزارش و خروجی اکسل، پشتیبان‌گیری JSON، همگام‌سازی دوطرفه با Google Sheets).<br/>
+        هنوز پیاده‌سازی نشده: OCR پاسپورت، ذخیره عکس در Google Drive، رمزنگاری اطلاعات حساس، قفل خودکار با رمز ورود.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<button class="fab" id="btnFab" title="افزودن">+</button>
+
+<nav class="tabbar">
+  <button class="tab-btn active" data-view="dashboard"><span class="ic">🏠</span>داشبورد</button>
+  <button class="tab-btn" data-view="applicants"><span class="ic">👥</span>متقاضیان</button>
+  <button class="tab-btn" data-view="exams"><span class="ic">📝</span>آزمون‌ها</button>
+  <button class="tab-btn" data-view="calendar"><span class="ic">📅</span>تقویم</button>
+  <button class="tab-btn" data-view="reports"><span class="ic">📊</span>گزارش‌ها</button>
+  <button class="tab-btn" data-view="messages"><span class="ic">💬</span>پیام‌ها</button>
+  <button class="tab-btn" data-view="settings"><span class="ic">⚙️</span>تنظیمات</button>
+</nav>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="./app.js"></script>
+</body>
+</html>

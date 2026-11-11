@@ -1,0 +1,17 @@
+{
+  "name": "ExamHub - دفتر مدیریت آزمون",
+  "short_name": "ExamHub",
+  "description": "مدیریت متقاضیان و آزمون‌های بین‌المللی",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "dir": "rtl",
+  "lang": "fa",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
