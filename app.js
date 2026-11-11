@@ -414,7 +414,6 @@ function renderTeachers() {
   $("#teacherCount").textContent = `${list.length.toLocaleString("fa-IR")} استاد`;
   $("#teachersList").innerHTML = list.length ? list.map(t => {
     const exams = DATA.exams.filter(e => e.teacherId === t.id);
-    const next = exams.filter(e => isOpen(e) && isAhead(e)).length;
     return `<div class="list-item">
       <div class="row-content">
         <div class="row-avatar">ا</div>
@@ -637,7 +636,8 @@ function renderCalendar() {
   }
   const todayJ = Jalali.fromDate(new Date());
   const daysInMonth = Jalali.jalMonthLength(calJY, calJM);
-  if (!calSelectedDay || calSelectedDay > daysInMonth) calSelectedDay = Math.min(todayJ[2], daysInMonth);
+  if (!calSelectedDay) calSelectedDay = Math.min(todayJ[2], daysInMonth);
+  else if (calSelectedDay > daysInMonth) calSelectedDay = daysInMonth;
   $("#calTitle").textContent = `${Jalali.MONTH_NAMES[calJM-1]} ${calJY.toLocaleString("fa-IR")}`;
   const firstOfMonthDate = Jalali.toDate(calJY, calJM, 1);
   const leading = (firstOfMonthDate.getDay() + 1) % 7;
