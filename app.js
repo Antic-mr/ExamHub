@@ -285,7 +285,7 @@ $$(".tab-btn").forEach(b => b.addEventListener("click", () => showView(b.dataset
 
 function render(name) {
   if (name === "dashboard") renderDashboard();
-  else if (name === "applicants") renderApplicants();
+  else if (name === "people") setPeopleTab(activePeopleTab);
   else if (name === "exams") renderExams();
   else if (name === "calendar") renderCalendar();
   else if (name === "reports") renderReportsSetup();
@@ -382,22 +382,94 @@ document.addEventListener("click", (e) => {
 function renderApplicants() {
   const q = ($("#searchApplicant").value || "").trim().toLowerCase();
   let list = [...DATA.applicants];
-  if (q) {
-    list = list.filter(a =>
-      applicantName(a).toLowerCase().includes(q) ||
-      (a.phone || "").includes(q) ||
-      (a.passportNumber || "").toLowerCase().includes(q)
-    );
-  }
+  if (q) list = list.filter(a =>
+    applicantName(a).toLowerCase().includes(q) ||
+    (a.phone || "").includes(q) ||
+    (a.passportNumber || "").toLowerCase().includes(q)
+  );
   list.sort((a, b) => applicantName(a).localeCompare(applicantName(b), "fa"));
-  $("#applicantsList").innerHTML = list.length ? list.map(a => `
-    <div class="list-item" data-open-applicant="${a.id}">
-      <div class="main"><div class="title">${esc(applicantName(a))}</div>
-      <div class="sub">${esc(a.phone || "")} ${a.passportNumber ? " · " + esc(a.passportNumber) : ""}</div></div>
-      <span>›</span>
-    </div>`).join("") : `<div class="empty">متقاضی‌ای یافت نشد.</div>`;
+  $("#applicantCount").textContent = `${list.length.toLocaleString("fa-IR")} نفر`;
+  $("#applicantsList").innerHTML = list.length ? list.map(a => {
+    const examCount = DATA.exams.filter(x => x.applicantId === a.id).length;
+    return `<div class="list-item" data-open-applicant="${a.id}">
+      <div class="row-content">
+        <div class="row-avatar">${esc((a.firstName || a.lastName || "؟").trim().charAt(0))}</div>
+        <div class="main"><div class="title">${esc(applicantName(a))}</div>
+          <div class="sub row-meta">${a.phone ? `<span>☎ ${esc(a.phone)}</span>` : ""}${a.passportNumber ? `<span>پاسپورت: ${esc(a.passportNumber)}</span>` : ""}</div>
+        </div>
+      </div>
+      <span class="teacher-exam-count">${examCount.toLocaleString("fa-IR")} آزمون</span><span class="muted">‹</span>
+    </div>`;
+  }).join("") : `<div class="empty">متقاضی‌ای یافت نشد.</div>`;
 }
 $("#searchApplicant").addEventListener("input", renderApplicants);
+
+// Teachers are shown in their own list view; their underlying records and sync schema stay unchanged.
+function renderTeachers() {
+  const q = ($("#searchTeacher").value || "").trim().toLowerCase();
+  let list = [...DATA.teachers];
+  if (q) list = list.filter(t => (t.name || "").toLowerCase().includes(q) || (t.phone || "").includes(q));
+  list.sort((x,y) => (x.name || "").localeCompare(y.name || "", "fa"));
+  $("#teacherCount").textContent = `${list.length.toLocaleString("fa-IR")} استاد`;
+  $("#teachersList").innerHTML = list.length ? list.map(t => {
+    const exams = DATA.exams.filter(e => e.teacherId === t.id);
+    return `<div class="list-item">
+      <div class="row-content">
+        <div class="row-avatar">ا</div>
+        <div class="main"><div class="title">${esc(t.name)}</div>
+          <div class="sub row-meta">${t.phone ? `<span>☎ ${esc(t.phone)}</span>` : "<span>شماره تماسی ثبت نشده</span>"}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="teacher-exam-count">${exams.length.toLocaleString("fa-IR")} آزمون</span>
+        <button class="btn ghost sm" data-edit-teacher="${t.id}">ویرایش</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty">استادی ثبت نشده است. از دکمه افزودن استاد شروع کنید.</div>`;
+}
+$("#searchTeacher").addEventListener("input", renderTeachers);
+$("#btnAddTeacherPage").addEventListener("click", () => openPersonForm("teachers"));
+
+function renderReferrers() {
+  const q = ($("#searchReferrer").value || "").trim().toLowerCase();
+  let list = [...DATA.referrers];
+  if (q) list = list.filter(r => (r.name || "").toLowerCase().includes(q) || (r.phone || "").includes(q));
+  list.sort((a,b) => (a.name || "").localeCompare(b.name || "", "fa"));
+  $("#referrerCount").textContent = `${list.length.toLocaleString("fa-IR")} معرف`;
+  $("#referrersPeopleList").innerHTML = list.length ? list.map(r => {
+    const exams = DATA.exams.filter(e => e.referrerId === r.id);
+    return `<div class="list-item">
+      <div class="row-content">
+        <div class="row-avatar">م</div>
+        <div class="main"><div class="title">${esc(r.name)}</div>
+          <div class="sub row-meta">${r.phone ? `<span>☎ ${esc(r.phone)}</span>` : "<span>شماره تماسی ثبت نشده</span>"}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="teacher-exam-count">${exams.length.toLocaleString("fa-IR")} معرفی</span>
+        <button class="btn ghost sm" data-edit-referrer="${r.id}">ویرایش</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty">معرفی ثبت نشده است. از دکمه افزودن معرف شروع کنید.</div>`;
+}
+$("#searchReferrer").addEventListener("input", renderReferrers);
+$("#btnAddReferrerPage").addEventListener("click", () => openPersonForm("referrers"));
+
+let activePeopleTab = "applicants";
+function setPeopleTab(name) {
+  if (!["applicants", "teachers", "referrers"].includes(name)) name = "applicants";
+  activePeopleTab = name;
+  $(".people-tab").forEach(b => {
+    const active = b.dataset.peopleTab === name;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  $(".people-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${name}`));
+  if (name === "applicants") renderApplicants();
+  else if (name === "teachers") renderTeachers();
+  else renderReferrers();
+}
+$(".people-tab").forEach(b => b.addEventListener("click", () => setPeopleTab(b.dataset.peopleTab)));
 
 function applicantFormHtml(a = {}) {
   return `
@@ -596,17 +668,19 @@ function openExamModal(id) {
 /* ---------------------------------------------------------------------- */
 /* CALENDAR                                                                */
 /* ---------------------------------------------------------------------- */
-let calJY, calJM;
+let calJY, calJM, calSelectedDay;
 function renderCalendar() {
-  if (!calJY) { const t = Jalali.fromDate(new Date()); calJY = t[0]; calJM = t[1]; }
-  $("#calTitle").textContent = `${Jalali.MONTH_NAMES[calJM-1]} ${calJY}`;
+  if (!calJY) {
+    const t = Jalali.fromDate(new Date());
+    calJY = t[0]; calJM = t[1]; calSelectedDay = t[2];
+  }
   const todayJ = Jalali.fromDate(new Date());
-  const firstOfMonthDate = Jalali.toDate(calJY, calJM, 1);
-  const startWeekday = (firstOfMonthDate.getDay() + 1) % 7; // convert JS Sun=0 to Sat-first index used in WEEKDAYS order (شنبه...جمعه) -> simpler: just use Sat=0
-  const jsDow = firstOfMonthDate.getDay(); // 0=Sun..6=Sat
-  // Persian week starts Saturday; map JS dow(0=Sun..6=Sat) -> persian index (0=Sat..6=Fri)
-  const leading = (jsDow + 1) % 7;
   const daysInMonth = Jalali.jalMonthLength(calJY, calJM);
+  if (!calSelectedDay) calSelectedDay = Math.min(todayJ[2], daysInMonth);
+  else if (calSelectedDay > daysInMonth) calSelectedDay = daysInMonth;
+  $("#calTitle").textContent = `${Jalali.MONTH_NAMES[calJM-1]} ${calJY.toLocaleString("fa-IR")}`;
+  const firstOfMonthDate = Jalali.toDate(calJY, calJM, 1);
+  const leading = (firstOfMonthDate.getDay() + 1) % 7;
   const examsByDay = {};
   DATA.exams.forEach(e => {
     if (e.examDateJ && e.examDateJ[0] === calJY && e.examDateJ[1] === calJM) {
@@ -614,6 +688,8 @@ function renderCalendar() {
       (examsByDay[d] = examsByDay[d] || []).push(e);
     }
   });
+  const monthTotal = Object.values(examsByDay).reduce((sum, day) => sum + day.length, 0);
+  $("#monthExamCount").textContent = `${monthTotal.toLocaleString("fa-IR")} آزمون`;
   const dows = ["ش","ی","د","س","چ","پ","ج"];
   let html = dows.map(d => `<div class="dow">${d}</div>`).join("");
   for (let i = 0; i < leading; i++) html += `<div class="day empty"></div>`;
@@ -621,18 +697,22 @@ function renderCalendar() {
     const isToday = todayJ[0]===calJY && todayJ[1]===calJM && todayJ[2]===d;
     const list = examsByDay[d] || [];
     const hasAny = list.length > 0;
-    const colorClass = hasAny ? (list.some(e=>e.status==="cancelled") && list.every(e=>e.status==="cancelled") ? "cancelled" : list.some(e=>e.status==="upcoming"||e.status==="rescheduled") ? "upcoming" : "done") : "";
-    html += `<div class="day ${isToday?"today":""} ${hasAny?"has-exam":""}" data-day="${d}">
-      ${d}${hasAny ? `<span class="dot chip ${colorClass}" style="width:5px;height:5px;padding:0"></span>` : ""}
-    </div>`;
+    const colorClass = hasAny ? (list.every(e=>e.status==="cancelled") ? "cancelled" : list.some(e=>e.status==="upcoming"||e.status==="rescheduled") ? "upcoming" : "done") : "";
+    html += `<button type="button" class="day ${isToday?"today":""} ${hasAny?"has-exam":""} ${calSelectedDay===d?"selected":""}" data-day="${d}" aria-label="${d} ${list.length ? "، " + list.length + " آزمون" : ""}">
+      <span>${d.toLocaleString("fa-IR")}</span>${hasAny ? `<span class="dot ${colorClass}" style="background:${colorClass==="upcoming"?"#3b82f6":colorClass==="done"?"#22c55e":"#ef4444"}"></span>` : ""}
+    </button>`;
   }
   $("#calGrid").innerHTML = html;
   $$(".day[data-day]", $("#calGrid")).forEach(el => el.addEventListener("click", () => {
-    const d = parseInt(el.dataset.day, 10);
-    const list = examsByDay[d] || [];
-    $("#calDayExams").innerHTML = list.length ? renderExamRows(list) : `<div class="empty">آزمونی در این روز ثبت نشده.</div>`;
+    calSelectedDay = Number(el.dataset.day);
+    renderCalendar();
   }));
-  $("#calDayExams").innerHTML = `<div class="empty">روزی را انتخاب کنید.</div>`;
+  const selected = examsByDay[calSelectedDay] || [];
+  const dateLabel = `${calSelectedDay.toLocaleString("fa-IR")} ${Jalali.MONTH_NAMES[calJM-1]} ${calJY.toLocaleString("fa-IR")}`;
+  $("#calSelectedTitle").textContent = dateLabel;
+  $("#calSelectedCount").textContent = `${selected.length.toLocaleString("fa-IR")} آزمون`;
+  selected.sort((x,y) => examSortKey(x)-examSortKey(y));
+  $("#calDayExams").innerHTML = selected.length ? renderExamRows(selected) : `<div class="empty">برای این روز آزمونی ثبت نشده است.</div>`;
 }
 $("#calPrev").addEventListener("click", () => { calJM--; if (calJM<1){calJM=12;calJY--;} renderCalendar(); });
 $("#calNext").addEventListener("click", () => { calJM++; if (calJM>12){calJM=1;calJY++;} renderCalendar(); });
@@ -777,18 +857,6 @@ document.addEventListener("click", (e) => {
 /* SETTINGS: teachers / referrers / exam types / backup                   */
 /* ---------------------------------------------------------------------- */
 function renderSettings() {
-  $("#teachersList").innerHTML = DATA.teachers.length ? DATA.teachers.map(t => `
-    <div class="list-item">
-      <div class="main"><div class="title">${esc(t.name)}</div><div class="sub">${esc(t.phone||"")}</div></div>
-      <div><button class="btn ghost sm" data-edit-teacher="${t.id}">ویرایش</button></div>
-    </div>`).join("") : `<div class="empty">استادی ثبت نشده.</div>`;
-
-  $("#referrersList").innerHTML = DATA.referrers.length ? DATA.referrers.map(r => `
-    <div class="list-item">
-      <div class="main"><div class="title">${esc(r.name)}</div><div class="sub">${esc(r.phone||"")}</div></div>
-      <div><button class="btn ghost sm" data-edit-referrer="${r.id}">ویرایش</button></div>
-    </div>`).join("") : `<div class="empty">معرفی ثبت نشده.</div>`;
-
   $("#examTypesList").innerHTML = DATA.examTypes.length ? DATA.examTypes.map(t => `
     <div class="list-item">
       <div class="main"><div class="title">${esc(t.name)}</div></div>
@@ -838,14 +906,13 @@ function openPersonForm(store, id) {
     ev.preventDefault();
     const fd = new FormData(ev.target);
     await storePut(store, { id: rec?.id || uid(), name: fd.get("name").trim(), phone: fd.get("phone").trim(), notes: fd.get("notes").trim() });
-    await refreshAll(); closeModal(); toast("ذخیره شد"); renderSettings();
+    await refreshAll(); closeModal(); toast("ذخیره شد"); renderSettings(); renderTeachers(); renderReferrers();
   });
   if (id) $("#mDelete").onclick = () => confirmDialog(`این ${label} حذف شود؟`, async () => {
-    await storeDelete(store, id); await refreshAll(); closeModal(); renderSettings();
+    await storeDelete(store, id); await refreshAll(); closeModal(); renderSettings(); renderTeachers(); renderReferrers();
   });
 }
-$("#btnAddTeacher").addEventListener("click", () => openPersonForm("teachers"));
-$("#btnAddReferrer").addEventListener("click", () => openPersonForm("referrers"));
+
 $("#btnAddExamType").addEventListener("click", () => {
   openModal(`
     <div class="modal-head"><h3>نوع آزمون جدید</h3><button class="icon-btn" id="mClose">✕</button></div>
@@ -1147,8 +1214,11 @@ document.addEventListener("visibilitychange", () => {
 /* ---------------------------------------------------------------------- */
 $("#btnFab").addEventListener("click", () => {
   const active = $(".tab-btn.active")?.dataset.view;
-  if (active === "applicants") openApplicantForm(null);
-  else if (active === "exams") openExamForm(null);
+  if (active === "people") {
+    if (activePeopleTab === "teachers") openPersonForm("teachers");
+    else if (activePeopleTab === "referrers") openPersonForm("referrers");
+    else openApplicantForm(null);
+  } else if (active === "exams") openExamForm(null);
   else openApplicantForm(null);
 });
 
