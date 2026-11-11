@@ -220,3 +220,5 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);outline
 [data-theme="dark"] .chip.suspended{background:#7c2d1255;color:#fdba74}
 [data-theme="dark"] .chip.cancelled_by{background:#83184355;color:#f9a8d4}
 .legend-dot.open{background:#0f766e}.legend-dot.past{background:#22c55e}.legend-dot.hold{background:#f59e0b}.legend-dot.bad{background:#e11d48}
+.chip.registered{background:#e0e7ff;color:#3730a3}
+[data-theme="dark"] .chip.registered{background:#31287e66;color:#c7d2fe}

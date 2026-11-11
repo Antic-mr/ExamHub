@@ -26,10 +26,11 @@ function toast(msg) {
 function fmtMoney(n) { n = Number(n) || 0; return n.toLocaleString("en-US"); }
 function todayJalaliStr() { const j = Jalali.fromDate(new Date()); return Jalali.format(...j); }
 
-// Keys of upcoming/done/cancelled/rescheduled are kept so existing data and sheet rows stay valid.
+// Keys upcoming/done/cancelled/rescheduled are unchanged so existing data and sheet rows stay valid.
 const STATUS_LABEL = {
   requested: "متقاضی آزمون",
-  upcoming: "ثبت‌نام شده",
+  registered: "ثبت‌نام شده",
+  upcoming: "پیش‌رو",
   rescheduled: "تغییر تاریخ",
   done: "آزمون داده",
   awaiting: "منتظر نتیجه",
@@ -40,10 +41,10 @@ const STATUS_LABEL = {
   cancelled_by: "کنسل کرده",
 };
 // Older labels that may still sit in the Google Sheet.
-const STATUS_ALIASES = { "پیش‌رو": "upcoming", "انجام‌شده": "done", "لغوشده": "cancelled" };
+const STATUS_ALIASES = { "انجام‌شده": "done", "لغوشده": "cancelled" };
 // kind drives dashboard counts and calendar colours: open = waiting for the exam day, past = exam taken,
 // hold = not decided yet, bad = did not happen.
-const STATUS_KIND = { requested: "hold", upcoming: "open", rescheduled: "open", done: "past", awaiting: "past", success: "past", suspended: "hold", banned: "bad", cancelled: "bad", cancelled_by: "bad" };
+const STATUS_KIND = { requested: "hold", registered: "open", upcoming: "open", rescheduled: "open", done: "past", awaiting: "past", success: "past", suspended: "hold", banned: "bad", cancelled: "bad", cancelled_by: "bad" };
 $("#examStatusFilter").insertAdjacentHTML("beforeend", Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""));
 $("#repStatus").insertAdjacentHTML("beforeend", Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""));
 
@@ -246,7 +247,7 @@ function renderDashboard() {
   const overdue = DATA.exams.filter(e => isOpen(e) && !isAhead(e)).length;
   const note = $("#overdueNote");
   note.style.display = overdue ? "block" : "none";
-  note.textContent = overdue ? `⚠️ ${overdue} آزمون با تاریخ گذشته هنوز «ثبت‌نام شده» است — برای بررسی بزنید` : "";
+  note.textContent = overdue ? `⚠️ ${overdue} آزمون با تاریخ گذشته هنوز «پیش‌رو» است — برای بررسی بزنید` : "";
   $("#statDone").textContent = DATA.exams.filter(e => STATUS_KIND[e.status] === "past").length;
   const totalAmount = DATA.exams.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   $("#statAmount").textContent = fmtMoney(totalAmount);
@@ -559,7 +560,7 @@ function openExamForm(id, fixedApplicantId) {
     };
     if (prevDate && parsed && Jalali.format(...parsed) !== prevDate) {
       rec.history.push({ at: nowIso(), previousDate: prevDate });
-      if (rec.status === "upcoming") rec.status = "rescheduled";
+      if (rec.status === "upcoming" || rec.status === "registered") rec.status = "rescheduled";
     }
     if (!rec.applicantId) { toast("لطفاً متقاضی را انتخاب کنید"); return; }
     await storePut("exams", rec);
