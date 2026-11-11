@@ -1,5 +1,5 @@
 // ExamHub Service Worker - offline shell caching
-const CACHE_NAME = "examhub-cache-v2";
+const CACHE_NAME = "examhub-cache-v4";
 const CORE_ASSETS = [
   "./",
   "./index.html",

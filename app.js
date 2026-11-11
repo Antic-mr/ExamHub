@@ -459,17 +459,17 @@ let activePeopleTab = "applicants";
 function setPeopleTab(name) {
   if (!["applicants", "teachers", "referrers"].includes(name)) name = "applicants";
   activePeopleTab = name;
-  $(".people-tab").forEach(b => {
+  $$(".people-tab").forEach(b => {
     const active = b.dataset.peopleTab === name;
     b.classList.toggle("active", active);
     b.setAttribute("aria-selected", active ? "true" : "false");
   });
-  $(".people-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${name}`));
+  $$(".people-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${name}`));
   if (name === "applicants") renderApplicants();
   else if (name === "teachers") renderTeachers();
   else renderReferrers();
 }
-$(".people-tab").forEach(b => b.addEventListener("click", () => setPeopleTab(b.dataset.peopleTab)));
+$$(".people-tab").forEach(b => b.addEventListener("click", () => setPeopleTab(b.dataset.peopleTab)));
 
 function applicantFormHtml(a = {}) {
   return `
