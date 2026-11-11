@@ -573,7 +573,7 @@ function renderCalendar() {
   const daysInMonth = Jalali.jalMonthLength(calJY, calJM);
   if (!calSelectedDay) calSelectedDay = Math.min(todayJ[2], daysInMonth);
   else if (calSelectedDay > daysInMonth) calSelectedDay = daysInMonth;
-  $("#calTitle").textContent = `${Jalali.MONTH_NAMES[calJM-1]} ${calJY.toLocaleString("fa-IR")}`;
+  $("#calTitle").textContent = `${Jalali.MONTH_NAMES[calJM-1]} ${String(calJY).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d])}`;
   const firstOfMonthDate = Jalali.toDate(calJY, calJM, 1);
   const leading = (firstOfMonthDate.getDay() + 1) % 7;
   const examsByDay = {};
@@ -603,7 +603,7 @@ function renderCalendar() {
     renderCalendar();
   }));
   const selected = examsByDay[calSelectedDay] || [];
-  const dateLabel = `${calSelectedDay.toLocaleString("fa-IR")} ${Jalali.MONTH_NAMES[calJM-1]} ${calJY.toLocaleString("fa-IR")}`;
+  const dateLabel = `${calSelectedDay.toLocaleString("fa-IR")} ${Jalali.MONTH_NAMES[calJM-1]} ${String(calJY).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d])}`;
   $("#calSelectedTitle").textContent = dateLabel;
   $("#calSelectedCount").textContent = `${selected.length.toLocaleString("fa-IR")} آزمون`;
   selected.sort((x,y) => examSortKey(x)-examSortKey(y));
