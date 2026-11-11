@@ -113,6 +113,33 @@ table th{color:var(--muted); font-weight:600; font-size:12px}
 .list-item .sub{font-size:12px; color:var(--muted); margin-top:2px}
 
 .search-bar{display:flex; gap:8px; margin-bottom:10px}
+.page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 2px 12px}
+.page-heading h2{font-size:17px;margin:0 0 3px}
+.page-heading p{margin:0}
+.count-pill{flex:none;border-radius:999px;background:var(--surface);border:1px solid var(--border);padding:6px 11px;font-size:12px;font-weight:700;color:var(--primary)}
+.list-card{padding:4px 12px}
+.list-card .list-item{padding:13px 4px;cursor:pointer;transition:background .15s}
+.list-card .list-item:active{background:var(--bg)}
+.list-card .list-item .title{font-size:14px}
+.list-card .list-item .sub{line-height:1.8}
+.list-card .row-avatar{width:38px;height:38px;flex:none;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:800}
+.list-card .row-content{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.list-card .row-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.teacher-exam-count{font-size:11px;color:var(--muted);background:var(--bg);padding:3px 8px;border-radius:20px}
+.calendar-card{padding:12px}
+.calendar-grid{gap:5px}
+.calendar-grid .dow{font-weight:700;padding:7px 0}
+.calendar-grid .day{min-height:40px;aspect-ratio:1;border-radius:12px;font-weight:600;transition:background .15s,border-color .15s}
+.calendar-grid .day.selected{background:var(--primary)!important;color:#fff;border-color:var(--primary)}
+.calendar-grid .day.selected .dot{background:#fff!important}
+.calendar-grid .day.has-exam{font-weight:800}
+.calendar-legend{display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:10px;padding-top:10px;color:var(--muted);font-size:11px}
+.calendar-legend span{display:flex;align-items:center;gap:5px}
+.legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.legend-dot.upcoming{background:#3b82f6}.legend-dot.done{background:#22c55e}.legend-dot.cancelled{background:#ef4444}
+.agenda-card h2{margin:0;font-size:14px}
+.agenda-list .list-item{padding:12px 2px;cursor:pointer}
+@media(min-width:600px){.calendar-grid{gap:8px}.calendar-grid .day{min-height:48px}.list-card{padding:6px 16px}}
 
 .modal-overlay{
   position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:none;
@@ -188,12 +215,29 @@ textarea.msg{min-height:120px}
     </div>
   </section>
 
-  <!-- APPLICANTS -->
+  <!-- PEOPLE / APPLICANTS -->
   <section class="view" id="view-applicants">
-    <div class="search-bar">
-      <input type="search" id="searchApplicant" placeholder="جست‌وجو با نام، تماس یا پاسپورت..." />
+    <div class="page-heading">
+      <div><h2>اشخاص و متقاضیان</h2><p class="muted small">پرونده افراد و سوابق آزمون‌هایشان</p></div>
+      <span class="count-pill" id="applicantCount">۰ نفر</span>
     </div>
-    <div class="card" id="applicantsList"></div>
+    <div class="search-bar">
+      <input type="search" id="searchApplicant" placeholder="جست‌وجو با نام، شماره تماس یا پاسپورت..." />
+    </div>
+    <div class="card list-card" id="applicantsList"></div>
+  </section>
+
+  <!-- TEACHERS -->
+  <section class="view" id="view-teachers">
+    <div class="page-heading">
+      <div><h2>اساتید</h2><p class="muted small">مدیریت اطلاعات و سوابق همکاری اساتید</p></div>
+      <span class="count-pill" id="teacherCount">۰ استاد</span>
+    </div>
+    <div class="search-bar">
+      <input type="search" id="searchTeacher" placeholder="جست‌وجوی نام یا شماره تماس استاد..." />
+    </div>
+    <div class="card list-card" id="teachersList"></div>
+    <button class="btn block" id="btnAddTeacherPage">+ افزودن استاد جدید</button>
   </section>
 
   <!-- EXAMS -->
@@ -212,17 +256,22 @@ textarea.msg{min-height:120px}
 
   <!-- CALENDAR -->
   <section class="view" id="view-calendar">
-    <div class="card">
+    <div class="page-heading">
+      <div><h2>تقویم آزمون‌ها</h2><p class="muted small">برنامه آزمون‌ها بر اساس تاریخ شمسی</p></div>
+      <span class="count-pill" id="monthExamCount">۰ آزمون</span>
+    </div>
+    <div class="card calendar-card">
       <div class="flex-between mb8">
-        <button class="btn secondary sm" id="calPrev">◀ ماه قبل</button>
+        <button class="btn secondary sm" id="calPrev">ماه قبل</button>
         <strong id="calTitle">-</strong>
-        <button class="btn secondary sm" id="calNext">ماه بعد ▶</button>
+        <button class="btn secondary sm" id="calNext">ماه بعد</button>
       </div>
       <div class="calendar-grid" id="calGrid"></div>
+      <div class="calendar-legend"><span><i class="legend-dot upcoming"></i> پیش‌رو</span><span><i class="legend-dot done"></i> انجام‌شده</span><span><i class="legend-dot cancelled"></i> لغوشده</span></div>
     </div>
-    <div class="card">
-      <h2>آزمون‌های روز انتخاب‌شده</h2>
-      <div id="calDayExams" class="empty">روزی را انتخاب کنید.</div>
+    <div class="card agenda-card">
+      <div class="flex-between mb8"><h2 id="calSelectedTitle">برنامه روز</h2><span class="muted small" id="calSelectedCount"></span></div>
+      <div id="calDayExams" class="agenda-list"><div class="empty">در حال آماده‌سازی تقویم…</div></div>
     </div>
   </section>
 
@@ -292,11 +341,6 @@ textarea.msg{min-height:120px}
   <!-- SETTINGS -->
   <section class="view" id="view-settings">
     <div class="card">
-      <h2>استادان</h2>
-      <div id="teachersList"></div>
-      <button class="btn secondary block" id="btnAddTeacher" style="margin-top:8px">+ افزودن استاد</button>
-    </div>
-    <div class="card">
       <h2>معرف‌ها</h2>
       <div id="referrersList"></div>
       <button class="btn secondary block" id="btnAddReferrer" style="margin-top:8px">+ افزودن معرف</button>
@@ -343,7 +387,8 @@ textarea.msg{min-height:120px}
 
 <nav class="tabbar">
   <button class="tab-btn active" data-view="dashboard"><span class="ic">🏠</span>داشبورد</button>
-  <button class="tab-btn" data-view="applicants"><span class="ic">👥</span>متقاضیان</button>
+  <button class="tab-btn" data-view="applicants"><span class="ic">👥</span>اشخاص</button>
+  <button class="tab-btn" data-view="teachers"><span class="ic">👨‍🏫</span>اساتید</button>
   <button class="tab-btn" data-view="exams"><span class="ic">📝</span>آزمون‌ها</button>
   <button class="tab-btn" data-view="calendar"><span class="ic">📅</span>تقویم</button>
   <button class="tab-btn" data-view="reports"><span class="ic">📊</span>گزارش‌ها</button>
