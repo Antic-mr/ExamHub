@@ -252,3 +252,25 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);outline
 .lv-more{margin-top:10px}
 main{padding-bottom:90px}
 @media(min-width:700px){.add-desktop{display:inline-flex}main{max-width:1100px}}
+
+/* --- phone links, contact bar, person page --- */
+a.tel{color:var(--primary);font-weight:600;text-decoration:none;white-space:nowrap}
+a.tel:hover{text-decoration:underline}
+a.plink{color:var(--primary);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.contact-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.file-btn{cursor:pointer}
+.pp-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px}
+.pp-card{margin-bottom:12px}
+.pp-title{display:flex;align-items:center;gap:12px}
+.pp-title h2{margin:0;font-size:18px;overflow-wrap:anywhere}
+.pp-title .row-avatar{width:48px;height:48px;font-size:20px;flex:0 0 auto}
+.role-pill{display:inline-block;margin-top:4px;font-size:11px;padding:2px 10px;border-radius:999px;background:#ccfbf1;color:#115e59;font-weight:700}
+.role-pill.teachers{background:#dbeafe;color:#1e40af}
+.role-pill.referrers{background:#fef3c7;color:#92400e}
+.pp-last{font-size:14px}
+.pp-summary{display:flex;flex-wrap:wrap;gap:6px}
+#personPage .card{margin-bottom:12px}
+#personPage .card h3{margin:0 0 8px}
+#personPage .list-item{border-bottom:1px solid var(--border);padding:10px 4px;gap:10px;align-items:center}
+.pp-sel{width:20px;height:20px;flex:0 0 auto}
+#ppReassign{margin:6px 0 8px}

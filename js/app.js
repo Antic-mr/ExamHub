@@ -150,6 +150,7 @@ async function refreshAll() {
     if (k && !seen.has(k)) seen.set(k, t);
   }
   DATA.examTypes = [...seen.values()];
+  if ($("#view-person")?.classList.contains("active")) renderPersonPage();
 }
 
 async function seedDefaultsIfEmpty() {
@@ -193,14 +194,16 @@ function confirmDialog(message, onYes) {
 function showView(name) {
   $$(".view").forEach(v => v.classList.remove("active"));
   $(`#view-${name}`).classList.add("active");
-  $$(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+  const tabName = name === "person" ? "people" : name;
+  $$(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.view === tabName));
   render(name);
 }
-$$(".tab-btn").forEach(b => b.addEventListener("click", () => showView(b.dataset.view)));
+$$(".tab-btn").forEach(b => b.addEventListener("click", () => { pageStack = []; showView(b.dataset.view); }));
 
 function render(name) {
   if (name === "dashboard") renderDashboard();
   else if (name === "people") setPeopleTab(activePeopleTab);
+  else if (name === "person") renderPersonPage();
   else if (name === "exams") renderExams();
   else if (name === "calendar") renderCalendar();
   else if (name === "reports") renderReportsSetup();
@@ -284,9 +287,21 @@ function renderExamRows(list) {
   }).join("");
 }
 
+function phoneLink(p) {
+  if (!p) return "";
+  const d = toLatinDigits(String(p)).replace(/[^\d+]/g, "");
+  return `<a class="tel" href="tel:${esc(d)}" dir="ltr">☎ ${esc(p)}</a>`;
+}
 document.addEventListener("click", (e) => {
+  if (e.target.closest("a[href^='tel:'], input, label")) return; // phone links and checkboxes never open a row
+  const imp = e.target.closest("[data-import-contacts]");
+  if (imp) { importContacts(imp.dataset.importContacts); return; }
+  const openT = e.target.closest("[data-open-teacher]");
+  if (openT) { openPersonPage("teachers", openT.dataset.openTeacher); return; }
+  const openR = e.target.closest("[data-open-referrer]");
+  if (openR) { openPersonPage("referrers", openR.dataset.openReferrer); return; }
   const openA = e.target.closest("[data-open-applicant]");
-  if (openA) { openApplicantModal(openA.dataset.openApplicant); return; }
+  if (openA) { openPersonPage("applicants", openA.dataset.openApplicant); return; }
   const openE = e.target.closest("[data-open-exam]");
   if (openE) { openExamModal(openE.dataset.openExam); return; }
 });
@@ -309,7 +324,7 @@ const applicantsView = ListView($("#applicantsList"), {
   },
   columns: [
     { key: "name", label: "نام", primary: true, sort: (a) => applicantName(a), render: (a) => `<strong>${esc(applicantName(a))}</strong>` },
-    { key: "phone", label: "شماره تماس", sort: (a) => a.phone || "", render: (a) => dashIfEmpty(a.phone) },
+    { key: "phone", label: "شماره تماس", sort: (a) => a.phone || "", render: (a) => phoneLink(a.phone) },
     { key: "passport", label: "پاسپورت", sort: (a) => a.passportNumber || "", render: (a) => dashIfEmpty(a.passportNumber) },
     { key: "nationality", label: "ملیت", sort: (a) => a.nationality || "", render: (a) => dashIfEmpty(a.nationality) },
     { key: "exams", label: "آزمون‌ها", badge: true, sort: (a) => examCountBy("applicantId", a.id), render: (a) => `<span class="teacher-exam-count">${countLabel(examCountBy("applicantId", a.id), "آزمون")}</span>` },
@@ -334,7 +349,7 @@ function simplePeopleView(el, store, searchSel, countSel, unit, examKey, editAtt
     },
     columns: [
       { key: "name", label: "نام", primary: true, sort: (r) => r.name || "", render: (r) => `<strong>${esc(r.name)}</strong>` },
-      { key: "phone", label: "شماره تماس", sort: (r) => r.phone || "", render: (r) => dashIfEmpty(r.phone) },
+      { key: "phone", label: "شماره تماس", sort: (r) => r.phone || "", render: (r) => phoneLink(r.phone) },
       { key: "count", label: "آزمون‌ها", badge: true, sort: (r) => examCountBy(examKey, r.id), render: (r) => `<span class="teacher-exam-count">${countLabel(examCountBy(examKey, r.id), "آزمون")}</span>` },
       { key: "notes", label: "توضیحات", sort: (r) => r.notes || "", render: (r) => dashIfEmpty(r.notes) },
     ],
@@ -343,8 +358,8 @@ function simplePeopleView(el, store, searchSel, countSel, unit, examKey, editAtt
   function render() { $(countSel).textContent = countLabel(view.render(), unit); }
   return render;
 }
-const renderTeachers = simplePeopleView($("#teachersList"), "teachers", "#searchTeacher", "#teacherCount", "استاد", "teacherId", "data-edit-teacher", "استاد");
-const renderReferrers = simplePeopleView($("#referrersPeopleList"), "referrers", "#searchReferrer", "#referrerCount", "معرف", "referrerId", "data-edit-referrer", "معرف");
+const renderTeachers = simplePeopleView($("#teachersList"), "teachers", "#searchTeacher", "#teacherCount", "استاد", "teacherId", "data-open-teacher", "استاد");
+const renderReferrers = simplePeopleView($("#referrersPeopleList"), "referrers", "#searchReferrer", "#referrerCount", "معرف", "referrerId", "data-open-referrer", "معرف");
 $("#btnAddTeacherPage").addEventListener("click", () => openPersonForm("teachers"));
 $("#btnAddReferrerPage").addEventListener("click", () => openPersonForm("referrers"));
 
@@ -368,6 +383,7 @@ function applicantFormHtml(a = {}) {
   return `
     <div class="modal-head"><h3>${a.id ? "ویرایش متقاضی" : "متقاضی جدید"}</h3>
       <button class="icon-btn" id="mClose">✕</button></div>
+    ${a.id ? "" : contactBarHtml()}
     <form id="applicantForm">
       <div class="row">
         <div><label>نام</label><input name="firstName" required value="${esc(a.firstName||"")}"></div>
@@ -394,6 +410,12 @@ function openApplicantForm(id) {
   const a = id ? getApplicant(id) || {} : {};
   openModal(applicantFormHtml(a));
   $("#mClose").onclick = closeModal;
+  wireContactBar((c) => {
+    const f = $("#applicantForm");
+    f.querySelector('[name="firstName"]').value = c.first || c.name || "";
+    f.querySelector('[name="lastName"]').value = c.last || "";
+    f.querySelector('[name="phone"]').value = c.mobiles[0] || "";
+  });
   $("#applicantForm").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const fd = new FormData(ev.target);
@@ -445,6 +467,195 @@ function openApplicantModal(id) {
   $("#mClose").onclick = closeModal;
   $("#mEdit").onclick = () => openApplicantForm(id);
   $("#mAddExam").onclick = () => openExamForm(null, id);
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* Phone contacts                                                          */
+/* ---------------------------------------------------------------------- */
+function contactBarHtml() {
+  return `<div class="contact-bar">
+    ${PhoneContacts.supported() ? `<button type="button" class="btn secondary sm" id="btnPickContact">📇 از مخاطبین گوشی</button>` : ""}
+    <label class="btn secondary sm file-btn">📎 فایل مخاطب (vCard)<input type="file" id="vcfInput" accept=".vcf,text/vcard,text/x-vcard" hidden></label>
+  </div>`;
+}
+function wireContactBar(fill) {
+  const pick = $("#btnPickContact");
+  if (pick) pick.onclick = async () => {
+    try { const c = await PhoneContacts.pickOne(); if (c) fill(c); } catch (err) { toast("دسترسی به مخاطبین ممکن نشد"); }
+  };
+  const f = $("#vcfInput");
+  if (f) f.onchange = async () => {
+    const list = f.files[0] ? await PhoneContacts.readVcfFile(f.files[0]) : [];
+    if (list[0]) fill(list[0]); else toast("مخاطبی در فایل پیدا نشد");
+  };
+}
+function importContacts(store) {
+  if (PhoneContacts.supported()) {
+    PhoneContacts.pickMany().then(l => addContacts(store, l)).catch(() => toast("دسترسی به مخاطبین ممکن نشد"));
+    return;
+  }
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = ".vcf,text/vcard,text/x-vcard"; inp.multiple = true;
+  inp.onchange = async () => {
+    let list = [];
+    for (const f of inp.files) list = list.concat(await PhoneContacts.readVcfFile(f));
+    addContacts(store, list);
+  };
+  inp.click();
+}
+async function addContacts(store, list) {
+  const key = (p) => toLatinDigits(p || "").replace(/\D/g, "").slice(-10);
+  const have = new Set(DATA[store].map(r => key(r.phone)).filter(Boolean));
+  let added = 0, skipped = 0;
+  for (const c of list) {
+    const ph = c.mobiles[0] || "", k = key(ph);
+    if (!c.name && !ph) continue;
+    if (k && have.has(k)) { skipped++; continue; }
+    if (k) have.add(k);
+    if (store === "applicants") {
+      await storePut("applicants", { id: uid(), firstName: c.first || c.name || ph, lastName: c.last || "", phone: ph, email: "", passportNumber: "", birthDateJ: "", nationality: "", notes: "", createdAt: nowIso() });
+    } else {
+      await storePut(store, { id: uid(), name: c.name || ph, phone: ph, notes: "" });
+    }
+    added++;
+  }
+  await refreshAll();
+  setPeopleTab(activePeopleTab);
+  toast(list.length ? `${added.toLocaleString("fa-IR")} مورد اضافه شد${skipped ? ` (${skipped.toLocaleString("fa-IR")} تکراری ردشد)` : ""}` : "مخاطبی انتخاب نشد");
+}
+
+/* ---------------------------------------------------------------------- */
+/* Person page (applicant / teacher / referrer): details, latest status, related lists */
+/* ---------------------------------------------------------------------- */
+let pageStack = [];
+let prevView = "people";
+const ROLE_LABEL = { applicants: "متقاضی", teachers: "استاد", referrers: "معرف" };
+const getPerson = (store, id) => DATA[store].find(x => x.id === id);
+const examTime = (e) => (e.examDateJ ? examSortKey(e) : -1);
+const latestExam = (list) => [...list].sort((a, b) => examTime(b) - examTime(a))[0];
+const examDateText = (e) => (e.examDateJ ? Jalali.format(...e.examDateJ) : "بدون تاریخ") + (e.examTime ? " · " + e.examTime : "");
+const statusChip = (e) => `<span class="chip ${e.status}">${esc(STATUS_LABEL[e.status] || e.status)}</span>`;
+const personLink = (store, id, name) => name ? `<a class="plink" data-open-${store === "teachers" ? "teacher" : "referrer"}="${id}">${esc(name)}</a>` : "";
+
+function openPersonPage(store, id) {
+  if (!getPerson(store, id)) return;
+  const cur = $(".view.active")?.id.replace("view-", "") || "people";
+  if (cur !== "person") prevView = cur;
+  pageStack.push({ store, id });
+  history.pushState({ person: pageStack.length }, "", "#person");
+  showView("person");
+}
+window.addEventListener("popstate", (e) => {
+  if (!$("#view-person").classList.contains("active")) return;
+  const depth = (e.state && e.state.person) || 0; // depth recorded at pushState; robust to stale events
+  if (depth >= pageStack.length) return;
+  pageStack.length = depth;
+  if (pageStack.length) renderPersonPage();
+  else { showView(prevView); if (prevView === "people") setPeopleTab(activePeopleTab); }
+});
+
+function infoField(label, html) { return html ? `<div class="lv-field"><span>${label}</span><b>${html}</b></div>` : ""; }
+
+function renderPersonPage() {
+  const top = pageStack[pageStack.length - 1], el = $("#personPage");
+  if (!top) { el.innerHTML = ""; return; }
+  const p = getPerson(top.store, top.id);
+  if (!p) { pageStack = []; showView(prevView); return; } // deleted while open
+  const isApplicant = top.store === "applicants";
+  const name = isApplicant ? applicantName(p) : p.name;
+  const exams = DATA.exams.filter(e => e[isApplicant ? "applicantId" : top.store === "teachers" ? "teacherId" : "referrerId"] === p.id)
+    .sort((a, b) => examTime(b) - examTime(a));
+  const last = latestExam(exams);
+
+  const info = isApplicant
+    ? infoField("شماره تماس", phoneLink(p.phone)) + infoField("ایمیل", esc(p.email)) + infoField("پاسپورت", esc(p.passportNumber)) +
+      infoField("تاریخ تولد", esc(p.birthDateJ)) + infoField("ملیت", esc(p.nationality)) + infoField("توضیحات", esc(p.notes))
+    : infoField("شماره تماس", phoneLink(p.phone)) + infoField("توضیحات", esc(p.notes));
+
+  let body = "";
+  if (isApplicant) {
+    body += `<div class="card"><h3>آخرین وضعیت</h3>${last
+      ? `<div class="pp-last">${statusChip(last)} <b>${esc(last.examType || "")}</b> <span class="muted">${esc(examDateText(last))}</span>
+         <div class="small muted">${last.teacherId ? "استاد: " + personLink("teachers", last.teacherId, getTeacher(last.teacherId)?.name) : ""}
+         ${last.referrerId ? " · معرف: " + personLink("referrers", last.referrerId, getReferrer(last.referrerId)?.name) : ""}${last.result ? " · نتیجه: " + esc(last.result) : ""}</div></div>`
+      : `<div class="empty">هنوز آزمونی ثبت نشده.</div>`}</div>`;
+    body += `<div class="card"><div class="flex-between"><h3>سوابق آزمون (${exams.length.toLocaleString("fa-IR")})</h3><button class="btn sm" id="ppAddExam">+ آزمون جدید</button></div>
+      ${exams.length ? exams.map(e => `<div class="list-item" data-open-exam="${e.id}"><div class="main">
+        <div class="title">${esc(e.examType || "")} ${statusChip(e)}</div>
+        <div class="sub">${esc(examDateText(e))}${e.teacherId ? " · استاد: " + personLink("teachers", e.teacherId, getTeacher(e.teacherId)?.name) : ""}${e.referrerId ? " · معرف: " + personLink("referrers", e.referrerId, getReferrer(e.referrerId)?.name) : ""}${Number(e.amount) ? " · " + fmtMoney(e.amount) + " تومان" : ""}</div>
+        ${e.result ? `<div class="sub">نتیجه: ${esc(e.result)}</div>` : ""}</div><span class="muted">‹</span></div>`).join("") : `<div class="empty">آزمونی ثبت نشده.</div>`}</div>`;
+  } else {
+    // teacher / referrer: status summary, applicants they are linked to, and the exams (bulk change of teacher/referrer)
+    const counts = {};
+    exams.forEach(e => counts[e.status] = (counts[e.status] || 0) + 1);
+    body += `<div class="card"><h3>خلاصه وضعیت</h3>${exams.length
+      ? `<div class="pp-summary">${Object.keys(STATUS_LABEL).filter(s => counts[s]).map(s => `<span class="chip ${s}">${esc(STATUS_LABEL[s])} ${counts[s].toLocaleString("fa-IR")}</span>`).join("")}</div>
+         <div class="small muted" style="margin-top:6px">آخرین آزمون: ${esc(last.examType || "")} · ${esc(examDateText(last))}</div>`
+      : `<div class="empty">هنوز آزمونی برای این ${ROLE_LABEL[top.store]} ثبت نشده.</div>`}</div>`;
+    const byApplicant = new Map();
+    exams.forEach(e => { if (!byApplicant.has(e.applicantId)) byApplicant.set(e.applicantId, []); byApplicant.get(e.applicantId).push(e); });
+    const people = [...byApplicant.entries()].map(([aid, list]) => ({ a: getApplicant(aid), list, last: latestExam(list) }))
+      .sort((x, y) => examTime(y.last) - examTime(x.last));
+    body += `<div class="card"><h3>متقاضیان (${people.length.toLocaleString("fa-IR")})</h3>${people.length ? people.map(({ a, list, last: l }) => `
+      <div class="list-item" ${a ? `data-open-applicant="${a.id}"` : ""}><div class="main">
+        <div class="title">${esc(applicantName(a))}</div>
+        <div class="sub">${a?.phone ? phoneLink(a.phone) + " · " : ""}${list.length.toLocaleString("fa-IR")} آزمون · آخرین: ${esc(l.examType || "")} ${esc(examDateText(l))}</div></div>
+        ${statusChip(l)}<span class="muted">‹</span></div>`).join("") : `<div class="empty">متقاضی‌ای ندارد.</div>`}</div>`;
+    const word = top.store === "teachers" ? "استاد" : "معرف";
+    body += `<div class="card"><div class="flex-between"><h3>آزمون‌ها (${exams.length.toLocaleString("fa-IR")})</h3>
+      ${exams.length ? `<label class="small"><input type="checkbox" id="ppSelAll"> همه</label>` : ""}</div>
+      ${exams.length ? `<button class="btn secondary block" id="ppReassign" disabled>تغییر ${word} آزمون‌های انتخاب‌شده</button>` : ""}
+      ${exams.map(e => `<div class="list-item" data-open-exam="${e.id}"><input type="checkbox" class="pp-sel" data-sel="${e.id}"><div class="main">
+        <div class="title">${esc(applicantName(getApplicant(e.applicantId)))} — ${esc(e.examType || "")} ${statusChip(e)}</div>
+        <div class="sub">${esc(examDateText(e))}${top.store === "teachers" ? (e.referrerId ? " · معرف: " + esc(getReferrer(e.referrerId)?.name || "") : "") : (e.teacherId ? " · استاد: " + esc(getTeacher(e.teacherId)?.name || "") : "")}</div></div><span class="muted">‹</span></div>`).join("")}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="pp-head">
+      <button type="button" class="btn secondary sm" id="ppBack">‹ بازگشت</button>
+      <button type="button" class="btn secondary sm" id="ppEdit">✎ ویرایش</button>
+    </div>
+    <div class="card pp-card">
+      <div class="pp-title"><div class="row-avatar">${esc((name || "؟").trim().charAt(0))}</div><div><h2>${esc(name)}</h2><span class="role-pill ${top.store}">${ROLE_LABEL[top.store]}</span></div></div>
+      <div class="lv-fields">${info}</div>
+    </div>${body}`;
+}
+
+$("#personPage").addEventListener("click", (e) => {
+  const top = pageStack[pageStack.length - 1];
+  if (!top) return;
+  if (e.target.closest("#ppBack")) { history.back(); return; }
+  if (e.target.closest("#ppEdit")) { top.store === "applicants" ? openApplicantForm(top.id) : openPersonForm(top.store, top.id); return; }
+  if (e.target.closest("#ppAddExam")) { openExamForm(null, top.id); return; }
+  if (e.target.closest("#ppReassign")) { openReassign(top); return; }
+});
+$("#personPage").addEventListener("change", (e) => {
+  if (e.target.id === "ppSelAll") $$("#personPage .pp-sel").forEach(c => c.checked = e.target.checked);
+  if (e.target.id === "ppSelAll" || e.target.classList.contains("pp-sel")) {
+    const n = $$("#personPage .pp-sel:checked").length, b = $("#ppReassign");
+    if (b) { b.disabled = !n; b.textContent = `تغییر ${pageStack[pageStack.length - 1].store === "teachers" ? "استاد" : "معرف"} آزمون‌های انتخاب‌شده${n ? ` (${n.toLocaleString("fa-IR")})` : ""}`; }
+  }
+});
+function openReassign(top) {
+  const ids = $$("#personPage .pp-sel:checked").map(c => c.dataset.sel);
+  if (!ids.length) return;
+  const word = top.store === "teachers" ? "استاد" : "معرف";
+  const options = DATA[top.store].filter(x => x.id !== top.id).sort((a, b) => (a.name || "").localeCompare(b.name || "", "fa"));
+  openModal(`
+    <div class="modal-head"><h3>تغییر ${word} برای ${ids.length.toLocaleString("fa-IR")} آزمون</h3><button class="icon-btn" id="mClose">✕</button></div>
+    <label>${word} جدید</label>
+    <select id="reassignTarget"><option value="">— بدون ${word} —</option>${options.map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join("")}</select>
+    <div class="modal-actions"><button class="btn block" id="reassignOk">اعمال تغییر</button></div>`);
+  $("#mClose").onclick = closeModal;
+  $("#reassignOk").onclick = async () => {
+    const key = top.store === "teachers" ? "teacherId" : "referrerId", target = $("#reassignTarget").value;
+    for (const id of ids) {
+      const ex = DATA.exams.find(x => x.id === id);
+      if (ex) await storePut("exams", { ...ex, [key]: target });
+    }
+    await refreshAll(); closeModal(); toast("تغییر اعمال شد");
+  };
 }
 
 /* ---------------------------------------------------------------------- */
@@ -538,8 +749,8 @@ function examFormHtml(e = {}, fixedApplicantId) {
     </form>`;
 }
 
-function openExamForm(id, fixedApplicantId) {
-  const e = id ? DATA.exams.find(x => x.id === id) || {} : {};
+function openExamForm(id, fixedApplicantId, defaults) {
+  const e = id ? DATA.exams.find(x => x.id === id) || {} : { ...(defaults || {}) };
   openModal(examFormHtml(e, fixedApplicantId));
   $("#mClose").onclick = closeModal;
   $("#examForm").addEventListener("submit", async (ev) => {
@@ -813,6 +1024,7 @@ function openPersonForm(store, id) {
   const rec = id ? DATA[store].find(x => x.id === id) : {};
   openModal(`
     <div class="modal-head"><h3>${id ? "ویرایش " + label : label + " جدید"}</h3><button class="icon-btn" id="mClose">✕</button></div>
+    ${id ? "" : contactBarHtml()}
     <form id="personForm">
       <label>نام</label><input name="name" required value="${esc(rec?.name||"")}">
       <label>شماره تماس</label><input name="phone" value="${esc(rec?.phone||"")}">
@@ -823,6 +1035,11 @@ function openPersonForm(store, id) {
       </div>
     </form>`);
   $("#mClose").onclick = closeModal;
+  wireContactBar((c) => {
+    const f = $("#personForm");
+    f.querySelector('[name="name"]').value = c.name || "";
+    f.querySelector('[name="phone"]').value = c.mobiles[0] || "";
+  });
   $("#personForm").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const fd = new FormData(ev.target);
@@ -1134,6 +1351,12 @@ document.addEventListener("visibilitychange", () => {
 /* FAB (context-aware "add" button)                                       */
 /* ---------------------------------------------------------------------- */
 $("#btnFab").addEventListener("click", () => {
+  const top = pageStack[pageStack.length - 1];
+  if (top && $("#view-person").classList.contains("active")) {
+    if (top.store === "applicants") openExamForm(null, top.id);
+    else openExamForm(null, null, { [top.store === "teachers" ? "teacherId" : "referrerId"]: top.id });
+    return;
+  }
   const active = $(".tab-btn.active")?.dataset.view;
   if (active === "people") {
     if (activePeopleTab === "teachers") openPersonForm("teachers");
