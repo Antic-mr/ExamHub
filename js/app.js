@@ -244,13 +244,21 @@ function isAhead(e) {
 }
 const isOpen = (e) => STATUS_KIND[e.status] === "open";
 
+function suspiciousDateExams() {
+  const y = Jalali.fromDate(new Date())[0];
+  return DATA.exams.filter(e => e.examDateJ && Math.abs(e.examDateJ[0] - y) > 2);
+}
 function renderDashboard() {
   $("#statApplicants").textContent = DATA.applicants.length;
   $("#statUpcoming").textContent = DATA.exams.filter(e => isOpen(e) && isAhead(e)).length;
   const overdue = DATA.exams.filter(e => isOpen(e) && !isAhead(e)).length;
   const note = $("#overdueNote");
-  note.style.display = overdue ? "block" : "none";
-  note.textContent = overdue ? `⚠️ ${overdue} آزمون با تاریخ گذشته هنوز «پیش‌رو» است — برای بررسی بزنید` : "";
+  const odd = suspiciousDateExams().length;
+  note.style.display = overdue || odd ? "block" : "none";
+  note.textContent = [
+    overdue ? `⚠️ ${overdue} آزمون با تاریخ گذشته هنوز «پیش‌رو» است` : "",
+    odd ? `⚠️ ${odd} آزمون سال مشکوک دارند (احتمالاً غلط تایپی)` : "",
+  ].filter(Boolean).join(" — ") + " — برای بررسی بزنید";
   $("#statDone").textContent = DATA.exams.filter(e => STATUS_KIND[e.status] === "past").length;
   const totalAmount = DATA.exams.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   $("#statAmount").textContent = fmtMoney(totalAmount);
@@ -759,6 +767,9 @@ function openExamForm(id, fixedApplicantId, defaults) {
     const dateStrRaw = fd.get("examDateJStr").trim();
     const parsed = Jalali.parse(dateStrRaw);
     const prevDate = e.examDateJ ? Jalali.format(...e.examDateJ) : null;
+    if (dateStrRaw && !parsed) { toast("تاریخ نامعتبر است (مثال: 1405/08/20)"); return; }
+    if (parsed && Math.abs(parsed[0] - Jalali.fromDate(new Date())[0]) > 2 &&
+        !confirm(`سال ${parsed[0]} با امسال فاصلهٔ زیادی دارد. درست است؟`)) return;
     const rec = {
       id: e.id || uid(),
       applicantId: fixedApplicantId || fd.get("applicantId"),
